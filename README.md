@@ -51,6 +51,6 @@ Example command:
 python /path/to/CPC_audio/cpc/train.py \
     --pathDB /path/to/SpokenCOCO_CPC \
     --pathCheckpoint /path/to/checkpoints/CPC_small_SpokenCOCO \
-    --file_extension .wav
+    --file_extension .wav --nLevelsGRU 2
 ```
 
