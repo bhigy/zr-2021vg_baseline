@@ -28,21 +28,19 @@ python flickr_audio_to_cpc_format.py --flickr_audio /path/to/FLICKR8K/flickr_aud
   --output /path/to/FLICKR_CPC
 ```
 
-These scripts will create folders with the following new structure. Original files won't be modified. It will created symbolic links with the following structure :
+Original files won't be modified. The scripts will create symbolic links with the following structure :
 
 ```bash
 PATH_AUDIO_FILES  
 │
 └───speaker1
-│   └───...
-│         │   seq_11.wav
-│         │   seq_12.wav
-│         │   ...
+│        │   seq_11.wav
+│        │   seq_12.wav
+│        │   ...
 │   
 └───speaker2
-    └───...
-          │   seq_21.wav
-          │   seq_22.wav
+        │   seq_21.wav
+        │   seq_22.wav
 ```
 
 To train the CPC model, follow the instructions at https://github.com/facebookresearch/CPC_audio.
