@@ -16,7 +16,7 @@ python -m pip install -r requirements.txt
 
 ### Data Preparation
 
-Please download [Flickr Audio](https://groups.csail.mit.edu/sls/downloads/flickraudio/) and [SpeechCOCO](https://github.com/William-N-Havard/SpeechCoco).
+Please download [Flickr Audio](https://groups.csail.mit.edu/sls/downloads/flickraudio/) and [SpokenCOCO](https://groups.csail.mit.edu/sls/downloads/placesaudio/index.cgi).
 Once the corpora have been downloaded, you can run the python scripts to convert the original format to the format needed by CPC.
 
 ```bash
