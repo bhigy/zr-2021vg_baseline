@@ -43,6 +43,8 @@ PATH_AUDIO_FILES
         │   seq_22.wav
 ```
 
+### CPC training
+
 To train the CPC model, follow the instructions at https://github.com/facebookresearch/CPC_audio.
 
 Example command:
