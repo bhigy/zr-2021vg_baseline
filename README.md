@@ -23,7 +23,7 @@ Once the corpora have been downloaded, you can run the python scripts to convert
 python utils/spoken_coco_to_cpc_format.py --audio /path/to/SpokenCOCO/wavs \
   --output /path/to/SpokenCOCO_CPC
   
-python flickr_audio_to_cpc_format.py --flickr_audio /path/to/FLICKR8K/flickr_audio/wavs \
+python utils/flickr_audio_to_cpc_format.py --flickr_audio /path/to/FLICKR8K/flickr_audio/wavs \
   --flickr_wav2spkr /path/to/FLICKR8K/wav2spk.txt \
   --output /path/to/FLICKR_CPC
 ```
