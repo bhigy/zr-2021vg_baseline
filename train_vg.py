@@ -51,7 +51,7 @@ run_config = dict(max_lr=args.cyclic_lr_max, min_lr=args.cyclic_lr_min, epochs=a
 logging.info('Training')
 old_time = datetime.datetime.now()
 logging.info(f'Start of training - {old_time}')
-M.experiment(net, data, run_config)
+M.experiment(net, data, run_config, wandb_mode='disabled')
 new_time = datetime.datetime.now()
 logging.info(f'End of training - {new_time}')
 diff_time = new_time - old_time
