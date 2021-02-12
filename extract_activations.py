@@ -2,7 +2,6 @@ import argparse
 import numpy as np
 import os
 from pathlib import Path
-import pickle
 import sys
 import torch
 from tqdm import tqdm
@@ -30,15 +29,22 @@ def parseArgs(argv):
         '--batch_size', type=int, default=8,
         help='Batch size')
     parser.add_argument(
+        '--debug', action='store_true',
+        help='Load only a very small amount of files for debugging purposes.')
+    parser.add_argument(
         '--file_extension', type=str, default="wav",
         help="Extension of the audio files in the dataset (default: wav).")
+    parser.add_argument(
+        '--layer', type=str, default='all',
+        help='Name of the layer to extract (default: "all", all layers).')
     parser.add_argument(
         '--max_size_seq', type=int, default=64000,
         help='Maximal number of frames to consider in each chunk when '
              'extracting activations (defaut: 64000).')
     parser.add_argument(
-        '--debug', action='store_true',
-        help='Load only a very small amount of files for debugging purposes.')
+        '--output_file_extension', type=str, default="txt",
+        choices=['txt', 'npy', 'pt'],
+        help="Extension of the audio files in the dataset (default: txt).")
     return parser.parse_args(argv)
 
 
@@ -111,26 +117,45 @@ def main(argv):
     print("VG model loaded!")
 
     # Extracting activations
+    # TODO:
+    #    * check if extraction needs to set eval mode to reduce memory consumption
     print("")
     print(f"Extracting activations and saving outputs to {args.pathOutputDir}...")
+    batch_fn = lambda x: dataset.batch_audio(x, max_frames=None)
     data = torch.utils.data.DataLoader(dataset=features,
                                        batch_size=args.batch_size,
                                        shuffle=False,
                                        num_workers=0,
-                                       collate_fn=dataset.batch_audio)
-    i_batch = 0
+                                       collate_fn=batch_fn)
+    i_next = 0
     for au, l in tqdm(data):
         activations = vg_model.SpeechEncoder.introspect(au.cuda(), l.cuda())
-        for k in activations:
-            pathActDir = pathOutputDir / k
-            if not pathActDir.exists():
-                pathActDir.mkdir(parents=True, exist_ok=True)
-            for i_ex in range(au.shape[0]):
-                pathOut = pathActDir / seqNames[i_batch * args.batch_size + i_ex][1]
-                pathOut = pathOut.with_suffix('.txt')
-                act = activations[k][i_ex].detach().cpu().numpy()
-                np.savetxt(pathOut, act)
-        i_batch += 1
+        fnames = [s[1] for s in seqNames[i_next: i_next + args.batch_size]]
+        if args.layer == 'all':
+            for k in activations:
+                save_activations(activations[k], pathOutputDir / k, fnames,
+                                 args.output_file_extension)
+        elif args.layer in activations:
+            save_activations(activations[args.layer],
+                             pathOutputDir / args.layer, fnames,
+                             args.output_file_extension)
+        i_next += args.batch_size
+
+
+def save_activations(activations, output_dir, fnames, output_format):
+    if not output_dir.exists():
+        output_dir.mkdir(parents=True, exist_ok=True)
+    for i, act in enumerate(activations):
+        fpath = (output_dir / fnames[i]).with_suffix(f'.{output_format}')
+        if output_format == 'txt':
+            act = act.detach().cpu().numpy()
+            np.savetxt(fpath, act)
+        elif output_format == 'npy':
+            act = act.detach().cpu().numpy()
+            np.save(fpath, act)
+        elif output_format == 'pt':
+            act = act.detach().cpu()
+            torch.save(act, fpath)
 
 
 if __name__ == "__main__":
