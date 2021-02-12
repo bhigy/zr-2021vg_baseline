@@ -60,6 +60,20 @@ See `python extract_activations.py --help` for more options.
 
 ### Computing ABX scores
 
+There are two main ways to compute the ABX scores:
+
+* using the [utility scripts from ZeroSpeech 2021](https://github.com/bootphon/zerospeech2021) to validate and evaluate a submission.
+
+```bash
+zerospeech2021-validate ~/corpora/zerospeech2021 data/submission/vg-rnn0 --no-lexical --no-syntactic --no-semantic --only-dev
+zerospeech2021-evaluate ~/corpora/zerospeech2021 data/submission/vg-rnn0 --no-lexical --no-syntactic --no-semantic --force-cpu -o results/zerospeech2021/rnn0
+```
+
+* using [libri-light's evaluation script](https://github.com/facebookresearch/libri-light/tree/master/eval).
+
+```bash
+python <path_to_libri-light_eval>/eval_ABX.py data/activations/rnn0/  ~/corpora/zerospeech2021/phonetic/dev-clean/dev-clean.item --file_extension '.pt' --out results/abx/rnn0 --feature_size 0.02 --distance_mode 'cosine'
+```
 
 ## Instructions for training CPC (comparison with the audio-only baseline)
 
