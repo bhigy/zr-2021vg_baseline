@@ -51,7 +51,7 @@ In order to compute the ABX score or train the k-means clustering, the activatio
 This can be done with the script `extract_activations.py`; e.g., for the first GRU layer (`rnn0`), run:
 
 ```bash
-python extract_activations.py exps/vg/<net.best.pt> ~/corpora/zerospeech2021/phonetic/dev-clean/ data/activations/rnn0 --batch_size 8 --layer rnn0 --output_file_extension 'pt'
+python extract_activations.py exps/vg/<net.best.pt> ~/corpora/zerospeech2021/phonetic/dev-clean/ data/activations/rnn0 --batch_size 8 --layer rnn0 --output_file_extension 'pt' --file_extension flac
 ```
 
 Where net.best.pt should be replaced with the checkpoint corresponding to the best epoch (see `exps/vg/results.json`).
