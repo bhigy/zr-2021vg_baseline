@@ -71,18 +71,10 @@ def main(argv):
                                   loadCache=False)
     print(f"Done! Found {len(seqNames)} files!")
 
-    # Verify the output directory
     pathOutputDir = Path(args.pathOutputDir)
-    if pathOutputDir.exists():
-        pass
-    #     existing_files = set([x.stem for x in pathOutputDir.glob('*.txt')])
-    #     seqNames = [s for s in seqNames if Path(s[1]).stem not in existing_files]
-    #     print(f'Found existing output directory at {args.pathOutputDir}, '
-    #           f'continue to build features of {len(seqNames)} audio files left!')
-    else:
-        print("")
-        print(f"Creating the output directory at {args.pathOutputDir}")
-        pathOutputDir.mkdir(parents=True, exist_ok=True)
+    print("")
+    print(f"Creating the output directory at {args.pathOutputDir}")
+    pathOutputDir.mkdir(parents=True, exist_ok=True)
     writeArgs(pathOutputDir / "_info_args.json", args)
 
     # Debug mode
@@ -98,17 +90,14 @@ def main(argv):
     print(f"Loading audio features for {args.pathDB}")
     pathDB = Path(args.pathDB)
     cache_fpath = pathDB / '_mfcc_features.pt'
-    if cache_fpath.exists():
-        print(f"Found cached features ({cache_fpath}). Loading them.")
-        features = torch.load(cache_fpath)
-    else:
-        print('No cached features. Computing them from scratch.')
-        audio_fpaths = [pathDB / s[1] for s in seqNames]
-        audio_config = _audio_feat_config
-        audio_config['max_size_seq'] = args.max_size_seq
-        features = audio_features(audio_fpaths, audio_config)
-        print(f'Caching features ({cache_fpath}).')
-        torch.save(features, cache_fpath)
+
+    audio_fpaths = [pathDB / s[1] for s in seqNames]
+    audio_config = _audio_feat_config
+    audio_config['max_size_seq'] = args.max_size_seq
+    features = audio_features(audio_fpaths, audio_config)
+    print(f'Caching features ({cache_fpath}).')
+    torch.save(features, cache_fpath)
+    torch.save(features, cache_fpath)
 
     # Load VG model
     print("")

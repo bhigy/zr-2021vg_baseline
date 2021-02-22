@@ -9,6 +9,10 @@ from platalea.experiments.config import get_argument_parser
 
 
 args = get_argument_parser()
+args.add_argument(
+        'dataset_name', help='Name of the dataset to preprocess.',
+        type=str, choices=['flickr8k', 'spokencoco'])
+
 # Parsing arguments
 args.enable_help()
 args.parse()
@@ -20,16 +24,28 @@ random.seed(args.seed)
 # Logging the arguments
 logging.info('Arguments: {}'.format(args))
 
-
 logging.info('Loading data')
-data = dict(
-    train=D.flickr8k_loader(
-        args.flickr8k_root, args.flickr8k_meta, args.flickr8k_language,
-        args.audio_features_fn, split='train', batch_size=32, shuffle=True,
-        downsampling_factor=args.downsampling_factor),
-    val=D.flickr8k_loader(
-        args.flickr8k_root, args.flickr8k_meta, args.flickr8k_language,
-        args.audio_features_fn, split='val', batch_size=32, shuffle=False))
+
+if args.dataset_name == 'flickr8k':
+    data = dict(
+        train=D.flickr8k_loader(
+            args.flickr8k_root, args.flickr8k_meta, args.flickr8k_language,
+            args.audio_features_fn, split='train', batch_size=32, shuffle=True,
+            downsampling_factor=args.downsampling_factor),
+        val=D.flickr8k_loader(
+            args.flickr8k_root, args.flickr8k_meta, args.flickr8k_language,
+            args.audio_features_fn, split='val', batch_size=32, shuffle=False))
+elif args.dataset_name == "spokencoco":
+    data = dict(
+        train=D.spokencoco_loader(
+            args.spokencoco_root, args.spokencoco_meta,
+            args.audio_features_fn, split='train', batch_size=32, shuffle=True,
+            downsampling_factor=args.downsampling_factor, debug=args.debug),
+        val=D.spokencoco_loader(
+            args.spokencoco_root, args.spokencoco_meta,
+            args.audio_features_fn, split='val', batch_size=32, shuffle=False, debug=args.debug))
+else:
+    raise ValueError("dataset_name should be in ['flickr8k', 'spokencoco']")
 
 config = dict(
     SpeechEncoder=dict(
