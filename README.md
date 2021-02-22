@@ -42,7 +42,7 @@ The VG model can be trained by running:
 mkdir -p exps/vg
 cd exps/vg
 cp ../../train_vg.py .
-python train_vg.py --flickr8k_root ~/corpora/flickr8k
+python train_vg.py flickr8k --flickr8k_root ~/corpora/flickr8k
 ```
 
 ### Extracting activations
