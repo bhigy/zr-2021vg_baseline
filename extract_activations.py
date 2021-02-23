@@ -70,6 +70,7 @@ def main(argv):
                                   extension=args.file_extension,
                                   loadCache=False)
     print(f"Done! Found {len(seqNames)} files!")
+    assert len(seqNames) > 0
 
     pathOutputDir = Path(args.pathOutputDir)
     print("")
@@ -90,14 +91,17 @@ def main(argv):
     print(f"Loading audio features for {args.pathDB}")
     pathDB = Path(args.pathDB)
     cache_fpath = pathDB / '_mfcc_features.pt'
-
-    audio_fpaths = [pathDB / s[1] for s in seqNames]
-    audio_config = _audio_feat_config
-    audio_config['max_size_seq'] = args.max_size_seq
-    features = audio_features(audio_fpaths, audio_config)
-    print(f'Caching features ({cache_fpath}).')
-    torch.save(features, cache_fpath)
-    torch.save(features, cache_fpath)
+    if cache_fpath.exists():
+        print(f"Found cached features ({cache_fpath}). Loading them.")
+        features = torch.load(cache_fpath)
+    else:
+        print('No cached features. Computing them from scratch.')
+        audio_fpaths = [pathDB / s[1] for s in seqNames]
+        audio_config = _audio_feat_config
+        audio_config['max_size_seq'] = args.max_size_seq
+        features = audio_features(audio_fpaths, audio_config)
+        print(f'Caching features ({cache_fpath}).')
+        torch.save(features, cache_fpath)
 
     # Load VG model
     print("")
