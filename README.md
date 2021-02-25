@@ -51,9 +51,9 @@ In order to compute the ABX score or train the k-means clustering, the activatio
 This can be done with the script `extract_activations.py`; e.g., for the first GRU layer (`rnn0`), run:
 
 ```bash
-python extract_activations.py exps/vg/<net.best.pt> ~/corpora/zerospeech2021/phonetic/dev-clean/ data/activations/rnn0 \
-  --batch_size 8 --layer rnn0 \
-  --output_file_extension 'pt' --file_extension wav
+python extract_activations.py exps/vgslu/<net.best.pt> ~/corpora/flickr8k/flickr_audio/wavs data/activations/flickr8k/train \
+    --batch_size 8 --layer rnn0 --output_file_extension 'pt' \
+    --seqList data/datasets/flicrk8k/flickr8k_train.txt --recursionLevel 0
 ```
 
 Where net.best.pt should be replaced with the checkpoint corresponding to the best epoch (see `exps/vg/results.json`).
@@ -62,7 +62,15 @@ See `python extract_activations.py --help` for more options.
 
 ### Computing ABX scores
 
-There are two main ways to compute the ABX scores:
+As explained in previous section, you will first need to extract activations for the zerospeech2021 dataset using the script `extract_activations.py`.
+
+```bash
+python extract_activations.py exps/vg/<net.best.pt> ~/corpora/zerospeech2021/phonetic/dev-clean/ data/activations/zerospeech2021 \
+  --batch_size 8 --layer rnn0 \
+  --output_file_extension 'pt' --file_extension wav
+```
+
+There are then two main ways to compute the ABX scores:
 
 * using the [utility scripts from ZeroSpeech 2021](https://github.com/bootphon/zerospeech2021) to validate and evaluate a submission.
 
@@ -74,7 +82,22 @@ zerospeech2021-evaluate ~/corpora/zerospeech2021 data/submission/vg-rnn0 --no-le
 * using [libri-light's evaluation script](https://github.com/facebookresearch/libri-light/tree/master/eval).
 
 ```bash
-python <path_to_libri-light_eval>/eval_ABX.py data/activations/rnn0/  ~/corpora/zerospeech2021/phonetic/dev-clean/dev-clean.item --file_extension '.pt' --out results/abx/rnn0 --feature_size 0.02 --distance_mode 'cosine'
+python <path_to_libri-light_eval>/eval_ABX.py data/activations/zerospeech2021/rnn0/  ~/corpora/zerospeech2021/phonetic/dev-clean/dev-clean.item --file_extension '.pt' --out results/abx/rnn0 --feature_size 0.02 --distance_mode 'cosine'
+```
+
+### Training clustering
+
+To train the k-means clustering on Flickr8K train set, first extract activations as explained [above](#extracting-activations) and then run:
+
+```bash
+python clustering.py --recursionLevel 0 --nClusters 50 --MAX_ITER 150 --save --batchSizeGPU 500 data/activations/flickr8k/train/rnn0 exps/kmeans/flickr8k/rnn0
+```
+
+To train the k-means clustering on LibriSpeech train-clean-100 set, run:
+
+```bash
+python extract_activations.py exps/vgslu/net.best.pt ~/corpora/LibriSpeech/train-clean-100 data/activations/librispeech/train-clean-100 --batch_size 8 --layer rnn0 --output_file_extension 'pt' --file_extension flac
+python clustering.py --recursionLevel 1 --nClusters 50 --MAX_ITER 150 --save --batchSizeGPU 500 data/activations/librispeech/train-clean-100/rnn0 exps/kmeans/librispeech/rnn0
 ```
 
 ## Instructions for training CPC (comparison with the audio-only baseline)

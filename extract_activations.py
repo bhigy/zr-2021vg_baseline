@@ -1,3 +1,4 @@
+# Based on https://github.com/bootphon/zerospeech2021_baseline/blob/master/scripts/build_CPC_features.py
 import argparse
 import numpy as np
 import os
@@ -6,7 +7,7 @@ import sys
 import torch
 from tqdm import tqdm
 
-from cpc.dataset import findAllSeqs
+from cpc.dataset import findAllSeqs, filterSeqs
 
 import platalea.dataset as dataset
 from platalea.utils.preprocessing import _audio_feat_config, audio_features
@@ -45,7 +46,19 @@ def parseArgs(argv):
         '--output_file_extension', type=str, default="txt",
         choices=['txt', 'npy', 'pt'],
         help="Extension of the audio files in the dataset (default: txt).")
+    parser.add_argument(
+        '--recursionLevel', type=int, default=2,
+        help="The speaker recursionLevel in the training dataset (default: 2).")
+    parser.add_argument(
+        '--seqList', type=str, default=None,
+        help="Specific the training sequence list (default: None).")
     return parser.parse_args(argv)
+
+
+def compute_audio_features(audio_fpaths, max_size_seq):
+    audio_config = _audio_feat_config
+    audio_config['max_size_seq'] = max_size_seq
+    return audio_features(audio_fpaths, audio_config)
 
 
 def main(argv):
@@ -60,16 +73,19 @@ def main(argv):
     print("")
     print(f"Looking for all {args.file_extension} files in {args.pathDB}")
     seqNames, _ = findAllSeqs(args.pathDB,
-                              speaker_level=1,
+                              speaker_level=args.recursionLevel,
                               extension=args.file_extension,
                               loadCache=True)
     if len(seqNames) == 0 or not os.path.splitext(seqNames[0][-1])[1].endswith(args.file_extension):
         print("Seems like the _seq_cache.txt does not contain the correct extension, reload the file list")
         seqNames, _ = findAllSeqs(args.pathDB,
-                                  speaker_level=1,
+                                  speaker_level=args.recursionLevel,
                                   extension=args.file_extension,
                                   loadCache=False)
     print(f"Done! Found {len(seqNames)} files!")
+    if args.seqList is not None:
+        seqNames = filterSeqs(args.seqList, seqNames)
+        print(f"Done! {len(seqNames)} remaining files after filtering!")
     assert len(seqNames) > 0
 
     pathOutputDir = Path(args.pathOutputDir)
@@ -90,18 +106,21 @@ def main(argv):
     print("")
     print(f"Loading audio features for {args.pathDB}")
     pathDB = Path(args.pathDB)
-    cache_fpath = pathDB / '_mfcc_features.pt'
-    if cache_fpath.exists():
-        print(f"Found cached features ({cache_fpath}). Loading them.")
-        features = torch.load(cache_fpath)
+    if args.seqList is None:
+        cache_fpath = pathDB / '_mfcc_features.pt'
+        if cache_fpath.exists():
+            print(f"Found cached features ({cache_fpath}). Loading them.")
+            features = torch.load(cache_fpath)
+        else:
+            print('No cached features. Computing them from scratch.')
+            audio_fpaths = [pathDB / s[1] for s in seqNames]
+            features = compute_audio_features(audio_fpaths, args.max_size_seq)
+            print(f'Caching features ({cache_fpath}).')
+            torch.save(features, cache_fpath)
     else:
-        print('No cached features. Computing them from scratch.')
+        print('Computing features.')
         audio_fpaths = [pathDB / s[1] for s in seqNames]
-        audio_config = _audio_feat_config
-        audio_config['max_size_seq'] = args.max_size_seq
-        features = audio_features(audio_fpaths, audio_config)
-        print(f'Caching features ({cache_fpath}).')
-        torch.save(features, cache_fpath)
+        features = compute_audio_features(audio_fpaths, args.max_size_seq)
 
     # Load VG model
     print("")
@@ -114,12 +133,11 @@ def main(argv):
     #    * check if extraction needs to set eval mode to reduce memory consumption
     print("")
     print(f"Extracting activations and saving outputs to {args.pathOutputDir}...")
-    batch_fn = lambda x: dataset.batch_audio(x, max_frames=None)
     data = torch.utils.data.DataLoader(dataset=features,
                                        batch_size=args.batch_size,
                                        shuffle=False,
                                        num_workers=0,
-                                       collate_fn=batch_fn)
+                                       collate_fn=lambda x: dataset.batch_audio(x, max_frames=None))
     i_next = 0
     for au, l in tqdm(data):
         activations = vg_model.SpeechEncoder.introspect(au.cuda(), l.cuda())
@@ -140,6 +158,7 @@ def save_activations(activations, output_dir, fnames, output_format):
         output_dir.mkdir(parents=True, exist_ok=True)
     for i, act in enumerate(activations):
         fpath = (output_dir / fnames[i]).with_suffix(f'.{output_format}')
+        fpath.parent.mkdir(parents=True, exist_ok=True)
         if output_format == 'txt':
             act = act.detach().cpu().numpy()
             np.savetxt(fpath, act)
