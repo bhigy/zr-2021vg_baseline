@@ -33,8 +33,8 @@ def parseArgs(argv):
         '--debug', action='store_true',
         help='Load only a very small amount of files for debugging purposes.')
     parser.add_argument(
-        '--file_extension', type=str, default="wav",
-        help="Extension of the audio files in the dataset (default: wav).")
+        '--file_extension', type=str, default=".wav",
+        help="Extension of the audio files in the dataset (default: .wav).")
     parser.add_argument(
         '--layer', type=str, default='all',
         help='Name of the layer to extract (default: "all", all layers).')
@@ -43,9 +43,9 @@ def parseArgs(argv):
         help='Maximal number of frames to consider in each chunk when '
              'extracting activations (defaut: 64000).')
     parser.add_argument(
-        '--output_file_extension', type=str, default="txt",
-        choices=['txt', 'npy', 'pt'],
-        help="Extension of the audio files in the dataset (default: txt).")
+        '--output_file_extension', type=str, default=".txt",
+        choices=['.txt', '.npy', '.pt'],
+        help="Extension of the audio files in the dataset (default: .txt).")
     parser.add_argument(
         '--recursionLevel', type=int, default=2,
         help="The speaker recursionLevel in the training dataset (default: 2).")
@@ -157,15 +157,15 @@ def save_activations(activations, output_dir, fnames, output_format):
     if not output_dir.exists():
         output_dir.mkdir(parents=True, exist_ok=True)
     for i, act in enumerate(activations):
-        fpath = (output_dir / fnames[i]).with_suffix(f'.{output_format}')
+        fpath = (output_dir / fnames[i]).with_suffix(f'{output_format}')
         fpath.parent.mkdir(parents=True, exist_ok=True)
-        if output_format == 'txt':
+        if output_format == '.txt':
             act = act.detach().cpu().numpy()
             np.savetxt(fpath, act)
-        elif output_format == 'npy':
+        elif output_format == '.npy':
             act = act.detach().cpu().numpy()
             np.save(fpath, act)
-        elif output_format == 'pt':
+        elif output_format == '.pt':
             act = act.detach().cpu()
             torch.save(act, fpath)
 

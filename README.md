@@ -52,7 +52,7 @@ This can be done with the script `extract_activations.py`; e.g., for the first G
 
 ```bash
 python extract_activations.py exps/vgslu/<net.best.pt> ~/corpora/flickr8k/flickr_audio/wavs data/activations/flickr8k/train \
-    --batch_size 8 --layer rnn0 --output_file_extension 'pt' \
+    --batch_size 8 --layer rnn0 --output_file_extension '.pt' \
     --seqList data/datasets/flicrk8k/flickr8k_train.txt --recursionLevel 0
 ```
 
@@ -67,7 +67,7 @@ As explained in previous section, you will first need to extract activations for
 ```bash
 python extract_activations.py exps/vg/<net.best.pt> ~/corpora/zerospeech2021/phonetic/dev-clean/ data/activations/zerospeech2021 \
   --batch_size 8 --layer rnn0 \
-  --output_file_extension 'pt' --file_extension wav
+  --output_file_extension '.pt' --file_extension '.wav'
 ```
 
 There are then two main ways to compute the ABX scores:
@@ -96,7 +96,7 @@ python clustering.py --recursionLevel 0 --nClusters 50 --MAX_ITER 150 --save --b
 To train the k-means clustering on LibriSpeech train-clean-100 set, run:
 
 ```bash
-python extract_activations.py exps/vgslu/net.best.pt ~/corpora/LibriSpeech/train-clean-100 data/activations/librispeech/train-clean-100 --batch_size 8 --layer rnn0 --output_file_extension 'pt' --file_extension flac
+python extract_activations.py exps/vgslu/net.best.pt ~/corpora/LibriSpeech/train-clean-100 data/activations/librispeech/train-clean-100 --batch_size 8 --layer rnn0 --output_file_extension '.pt' --file_extension '.flac'
 python clustering.py --recursionLevel 1 --nClusters 50 --MAX_ITER 150 --save --batchSizeGPU 500 data/activations/librispeech/train-clean-100/rnn0 exps/kmeans/librispeech/rnn0
 ```
 
