@@ -24,7 +24,7 @@ def loadFilePool(path):
 
 
 def loadFile(path):
-    ext = path.suffix
+    ext = Path(path).suffix
     if ext == '.txt':
         data = np.loadtxt(path)
     elif ext == '.npy':

@@ -39,16 +39,8 @@ def parseArgs(argv):
                         help='Debug mode, only use a small number of training data.')
     parser.add_argument('--batchSizeGPU', type=int, default=50,
                         help='Batch size of each GPU (default: 50).')
-    parser.add_argument('--DPMean', action='store_true',
-                        help='Activate DPMeans training instead of Kmeans.')
-    parser.add_argument('-l', '--DPLambda', type=float, default=11,
-                        help='Lambda parameter of DPMeans algo (default: 11).')
     parser.add_argument('--perIterSize', type=int, default=-1,
                         help='(Depreciated) Number of items per iteration (default: -1).')
-    parser.add_argument('--dimReduction', type=str, default=None,
-                        help='Dimentionality reduction (default: None)')
-    parser.add_argument('--centroidLimits', type=int, nargs=2, default=None,
-                        help='centroidLimits when using dimentionality reduction (default: None)')
     parser.add_argument('--getDistanceEstimation', action='store_true',
                         help='Get distance estimation')
     parser.add_argument('--save', action='store_true',
@@ -56,8 +48,6 @@ def parseArgs(argv):
                         'be saved in the same directory as the output.')
     parser.add_argument('--load', action='store_true',
                         help='Load the last checkpoint from the same directory as the output.')
-    parser.add_argument('--save-last', type=int, default=5,
-                        help='Number of last checkpoints to be saved (default: 5).')
     return parser.parse_args(argv)
 
 
@@ -103,8 +93,8 @@ if __name__ == "__main__":
     if nGPUs == 0:
         raise RuntimeError('No GPU found')
     batchSize = args.batchSizeGPU * nGPUs
-    trainLoader = dataset.getDataLoader(batchSize, numWorkers=0)
-    print(f"Length of dataLoader: {len(trainLoader)}")
+    dataloader = dataset.getDataLoader(batchSize, numWorkers=0)
+    print(f"Length of dataLoader: {len(dataloader)}")
     print("")
 
     # Check if dir exists
@@ -120,7 +110,7 @@ if __name__ == "__main__":
     start_time = time.time()
     # Using a dumb lambda function to skip feature extraction as we start from
     # the activations
-    clusters = kMeanGPU(trainLoader, lambda x: x, args.nClusters, args.nGroups,
+    clusters = kMeanGPU(dataloader, lambda x: x, args.nClusters, args.nGroups,
                         perIterSize=args.perIterSize,
                         MAX_ITER=args.MAX_ITER,
                         save=args.save, load=args.load,

@@ -12,7 +12,7 @@ from cpc.dataset import findAllSeqs, filterSeqs
 import platalea.dataset as dataset
 from platalea.utils.preprocessing import _audio_feat_config, audio_features
 
-from utils_functions import writeArgs
+from utils.utils_functions import writeArgs
 
 
 def parseArgs(argv):
@@ -23,12 +23,12 @@ def parseArgs(argv):
         'pathCheckpoint', type=str, help='Path to the VG model checkpoint.')
     parser.add_argument(
         'pathDB', type=str,
-        help='Path to the dataset that we want to quantize.')
+        help='Path to the dataset that we want to process.')
     parser.add_argument(
         'pathOutputDir', type=str, help='Path to the output directory.')
     parser.add_argument(
         '--batch_size', type=int, default=8,
-        help='Batch size')
+        help='Batch size used to compute activations (defaut: 8).')
     parser.add_argument(
         '--debug', action='store_true',
         help='Load only a very small amount of files for debugging purposes.')
@@ -51,7 +51,8 @@ def parseArgs(argv):
         help="The speaker recursionLevel in the training dataset (default: 2).")
     parser.add_argument(
         '--seqList', type=str, default=None,
-        help="Specific the training sequence list (default: None).")
+        help="Specify a txt file containing the list of sequences (file names)" \
+        'to be included (default: None). If not speficied, include all files found in pathActivations.')
     return parser.parse_args(argv)
 
 
@@ -83,10 +84,13 @@ def main(argv):
                                   extension=args.file_extension,
                                   loadCache=False)
     print(f"Done! Found {len(seqNames)} files!")
+
+    # Filter specific sequences
     if args.seqList is not None:
         seqNames = filterSeqs(args.seqList, seqNames)
         print(f"Done! {len(seqNames)} remaining files after filtering!")
-    assert len(seqNames) > 0
+    assert len(seqNames) > 0, \
+        "No file to be quantized!"
 
     pathOutputDir = Path(args.pathOutputDir)
     print("")
@@ -129,8 +133,6 @@ def main(argv):
     print("VG model loaded!")
 
     # Extracting activations
-    # TODO:
-    #    * check if extraction needs to set eval mode to reduce memory consumption
     print("")
     print(f"Extracting activations and saving outputs to {args.pathOutputDir}...")
     data = torch.utils.data.DataLoader(dataset=features,
