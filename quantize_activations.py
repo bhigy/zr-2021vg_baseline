@@ -55,10 +55,6 @@ def parseArgs(argv):
         help='Path to the activations that we want to quantize.')
     parser.add_argument(
         'pathOutputDir', type=str, help='Path to the output directory.')
-    # TODO: check if it is still useful
-    parser.add_argument(
-        '--batch_size', type=int, default=8,
-        help='Batch size used to compute activations (defaut: 8).')
     parser.add_argument(
         '--cpu', action='store_true', help="Run on a cpu machine.")
     parser.add_argument(
