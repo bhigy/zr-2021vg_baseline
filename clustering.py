@@ -18,36 +18,52 @@ from data import SequentialData
 def parseArgs(argv):
     # Run parameters
     parser = argparse.ArgumentParser(description='Clustering module using kmeans or dpmeans.')
-    parser.add_argument('pathActivations', type=str,
-                        help="Path to the activations to cluster.")
-    parser.add_argument('pathOutput', type=str,
-                        help="Path to the output clustering checkpoint.")
-    parser.add_argument('-k', '--nClusters', type=int, default=50,
-                        help="Number of clusters for kmeans algorithm (default: 50).")
-    parser.add_argument('-g',  '--nGroups', type=int, default=1,
-                        help="Number of groups for kmeans algorithm (default: 1).")
-    parser.add_argument('-n', '--MAX_ITER', type=int, default=100,
-                        help="Number of iterations (default: 100).")
-    parser.add_argument('--recursionLevel', type=int, default=2,
-                        help="The speaker recursionLevel in the training dataset (default: 2).")
-    parser.add_argument('--extension', type=str, default='.pt',
-                        choices=['.txt', '.npy', '.pt'],
-                        help="The activation file extension (default: .pt).")
-    parser.add_argument('--seqList', type=str, default=None,
-                        help="Specific the training sequence list (default: None).")
-    parser.add_argument('--debug', action='store_true',
-                        help='Debug mode, only use a small number of training data.')
-    parser.add_argument('--batchSizeGPU', type=int, default=50,
-                        help='Batch size of each GPU (default: 50).')
-    parser.add_argument('--perIterSize', type=int, default=-1,
-                        help='(Depreciated) Number of items per iteration (default: -1).')
-    parser.add_argument('--getDistanceEstimation', action='store_true',
-                        help='Get distance estimation')
-    parser.add_argument('--save', action='store_true',
-                        help='Save the intermediate checkpoints. The checkpoints will'
-                        'be saved in the same directory as the output.')
-    parser.add_argument('--load', action='store_true',
-                        help='Load the last checkpoint from the same directory as the output.')
+    parser.add_argument(
+        'pathActivations', type=str,
+        help="Path to the activations to cluster.")
+    parser.add_argument(
+        'pathOutput', type=str,
+        help="Path to the output clustering checkpoint.")
+    parser.add_argument(
+        '-g',  '--nGroups', type=int, default=1,
+        help="Number of groups for kmeans algorithm (default: 1).")
+    parser.add_argument(
+        '-k', '--nClusters', type=int, default=50,
+        help="Number of clusters for kmeans algorithm (default: 50).")
+    parser.add_argument(
+        '-n', '--MAX_ITER', type=int, default=100,
+        help="Number of iterations (default: 150).")
+    parser.add_argument(
+        '--batchSizeGPU', type=int, default=50,
+        help='Batch size of each GPU (default: 50).')
+    parser.add_argument(
+        '--debug', action='store_true',
+        help='Debug mode, only use a small number of training data.')
+    parser.add_argument(
+        '--extension', type=str, default='.pt', choices=['.txt', '.npy', '.pt'],
+        help="The activation file extension (default: .pt).")
+    parser.add_argument(
+        '--getDistanceEstimation', action='store_true',
+        help='Get distance estimation')
+    parser.add_argument(
+        '--load', action='store_true',
+        help='Load the last checkpoint from the same directory as the output.')
+    parser.add_argument(
+        '--perIterSize', type=int, default=-1,
+        help='(Depreciated) Number of items per iteration (default: -1).')
+    parser.add_argument(
+        '--recursionLevel', type=int, default=2,
+        help="The speaker recursionLevel in the training dataset (default: 2).")
+    parser.add_argument(
+        '--save', action='store_true',
+        help='Save the intermediate checkpoints. The checkpoints will'
+        'be saved in the same directory as the output.')
+    parser.add_argument(
+        '--save-last', type=int, default=5,
+        help='Number of last checkpoints to be saved (default: 5).')
+    parser.add_argument(
+        '--seqList', type=str, default=None,
+        help="Specific the training sequence list (default: None).")
     return parser.parse_args(argv)
 
 
