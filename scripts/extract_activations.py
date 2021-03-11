@@ -90,7 +90,7 @@ def main(argv):
         seqNames = filterSeqs(args.seqList, seqNames)
         print(f"Done! {len(seqNames)} remaining files after filtering!")
     assert len(seqNames) > 0, \
-        "No file to be quantized!"
+        "No file to be processed!"
 
     pathOutputDir = Path(args.pathOutputDir)
     print("")
@@ -161,6 +161,9 @@ def save_activations(activations, output_dir, fnames, output_format):
     for i, act in enumerate(activations):
         fpath = (output_dir / fnames[i]).with_suffix(f'{output_format}')
         fpath.parent.mkdir(parents=True, exist_ok=True)
+        # hack to be able to use output of attention layer for sSIMI
+        if len(act.shape) == 1:
+            act = torch.cat((act[None, :], act[None, :]))
         if output_format == '.txt':
             act = act.detach().cpu().numpy()
             np.savetxt(fpath, act)
