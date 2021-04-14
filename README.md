@@ -41,7 +41,7 @@ The VG model can be trained by running:
 ```bash
 mkdir -p exps/vg
 cd exps/vg
-cp ../../train_vg.py .
+cp ../../scripts/train_vg.py .
 python train_vg.py flickr8k --flickr8k_root ~/corpora/flickr8k
 ```
 
@@ -137,7 +137,7 @@ We can now extract audio and visual features by typing :
 ```bash
 python -m platalea.utils.preprocessing flickr8k --flicrk8k_root ~/corpora/flickr8k \
   --cpc_model_path zr2021_models/checkpoints/CPC-small-kmeans50/cpc_ls100/checkpoint_170.pt \
-  --audio_features_fn cpc_small.memmap
+  --audio_features_fn cpc_small.pt
 ```
 
 Similary, you can choose to train from CPC representations by typing :
@@ -145,7 +145,7 @@ Similary, you can choose to train from CPC representations by typing :
 ```bash
 python -m platalea.utils.preprocessing flickr8k --flicrk8k_root ~/corpora/flickr8k \
   --cpc_model_path zr2021_models/checkpoints/CPC-big-kmeans50/cpc_ll6k/checkpoint_32.pt \
-  --audio_features_fn cpc_big_2nd_layer.memmap --cpc_gru_level 2
+  --audio_features_fn cpc_big_2nd_layer.pt --cpc_gru_level 2
 ```
 
 And train the visually ground model :
@@ -153,7 +153,7 @@ And train the visually ground model :
 ```bash
 mkdir -p exps/cpc_vg
 cd exps/cpc_vg
-cp ../../train_cpc_vg.py .
+cp ../../scripts/train_cpc_vg.py .
 python train_cpc_vg.py flickr8k --flickr8k_root ~/corpora/flickr8k
 ```
 
