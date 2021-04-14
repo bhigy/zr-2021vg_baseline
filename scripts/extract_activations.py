@@ -1,3 +1,4 @@
+# Based on https://github.com/bootphon/zerospeech2021_baseline/blob/master/scripts/build_CPC_features.py
 import argparse
 import numpy as np
 import os
@@ -6,12 +7,12 @@ import sys
 import torch
 from tqdm import tqdm
 
-from cpc.dataset import findAllSeqs
+from cpc.dataset import findAllSeqs, filterSeqs
 
 import platalea.dataset as dataset
 from platalea.utils.preprocessing import audio_features
 
-from utils_functions import writeArgs
+from utils.utils_functions import writeArgs
 
 
 def parseArgs(argv):
@@ -22,18 +23,18 @@ def parseArgs(argv):
         'pathCheckpoint', type=str, help='Path to the VG model checkpoint.')
     parser.add_argument(
         'pathDB', type=str,
-        help='Path to the dataset that we want to quantize.')
+        help='Path to the dataset that we want to process.')
     parser.add_argument(
         'pathOutputDir', type=str, help='Path to the output directory.')
     parser.add_argument(
         '--batch_size', type=int, default=8,
-        help='Batch size')
+        help='Batch size used to compute activations (defaut: 8).')
     parser.add_argument(
         '--debug', action='store_true',
         help='Load only a very small amount of files for debugging purposes.')
     parser.add_argument(
-        '--file_extension', type=str, default="wav",
-        help="Extension of the audio files in the dataset (default: wav).")
+        '--file_extension', type=str, default=".wav",
+        help="Extension of the audio files in the dataset (default: .wav).")
     parser.add_argument(
         '--layer', type=str, default='all',
         help='Name of the layer to extract (default: "all", all layers).')
@@ -63,7 +64,20 @@ def parseArgs(argv):
         help='The RNN layer that needs to be extracted. Default to -1, extracts the '
              'last RNN layer of the aggregator network. Ex : for CPC big, 1 will extract the first layer,'
              '2 will extract the second layer and so on.')
+    parser.add_argument(
+        '--recursionLevel', type=int, default=2,
+        help="The speaker recursionLevel in the training dataset (default: 2).")
+    parser.add_argument(
+        '--seqList', type=str, default=None,
+        help="Specify a txt file containing the list of sequences (file names)" \
+        'to be included (default: None). If not speficied, include all files found in pathActivations.')
     return parser.parse_args(argv)
+
+
+def compute_audio_features(audio_fpaths, max_size_seq, _audio_feat_config):
+    audio_config = _audio_feat_config
+    audio_config['max_size_seq'] = max_size_seq
+    return audio_features(audio_fpaths, audio_config)
 
 
 def main(argv):
@@ -92,17 +106,23 @@ def main(argv):
     print("")
     print(f"Looking for all {args.file_extension} files in {args.pathDB}")
     seqNames, _ = findAllSeqs(args.pathDB,
-                              speaker_level=1,
+                              speaker_level=args.recursionLevel,
                               extension=args.file_extension,
                               loadCache=True)
     if len(seqNames) == 0 or not os.path.splitext(seqNames[0][-1])[1].endswith(args.file_extension):
         print("Seems like the _seq_cache.txt does not contain the correct extension, reload the file list")
         seqNames, _ = findAllSeqs(args.pathDB,
-                                  speaker_level=1,
+                                  speaker_level=args.recursionLevel,
                                   extension=args.file_extension,
                                   loadCache=False)
     print(f"Done! Found {len(seqNames)} files!")
-    assert len(seqNames) > 0
+
+    # Filter specific sequences
+    if args.seqList is not None:
+        seqNames = filterSeqs(args.seqList, seqNames)
+        print(f"Done! {len(seqNames)} remaining files after filtering!")
+    assert len(seqNames) > 0, \
+        "No file to be processed!"
 
     pathOutputDir = Path(args.pathOutputDir)
     print("")
@@ -122,18 +142,22 @@ def main(argv):
     print("")
     print(f"Loading audio features for {args.pathDB}")
     pathDB = Path(args.pathDB)
-    cache_fpath = pathDB / args.audio_features_fn
-    if cache_fpath.exists():
-        print(f"Found cached features ({cache_fpath}). Loading them.")
-        features = torch.load(cache_fpath)
+
+    if args.seqList is None:
+        cache_fpath = pathDB / '_mfcc_features.pt'
+        if cache_fpath.exists():
+            print(f"Found cached features ({cache_fpath}). Loading them.")
+            features = torch.load(cache_fpath)
+        else:
+            print('No cached features. Computing them from scratch.')
+            audio_fpaths = [pathDB / s[1] for s in seqNames]
+            features = compute_audio_features(audio_fpaths, args.max_size_seq, _audio_feat_config)
+            print(f'Caching features ({cache_fpath}).')
+            torch.save(features, cache_fpath)
     else:
-        print('No cached features. Computing them from scratch.')
+        print('Computing features.')
         audio_fpaths = [pathDB / s[1] for s in seqNames]
-        audio_config = _audio_feat_config
-        audio_config['max_size_seq'] = args.max_size_seq
-        features = audio_features(audio_fpaths, audio_config)
-        print(f'Caching features ({cache_fpath}).')
-        torch.save(features, cache_fpath)
+        features = compute_audio_features(audio_fpaths, args.max_size_seq, _audio_feat_config)
 
     # Load VG model
     print("")
@@ -142,16 +166,13 @@ def main(argv):
     print("VG model loaded!")
 
     # Extracting activations
-    # TODO:
-    #    * check if extraction needs to set eval mode to reduce memory consumption
     print("")
     print(f"Extracting activations and saving outputs to {args.pathOutputDir}...")
-    batch_fn = lambda x: dataset.batch_audio(x, max_frames=None)
     data = torch.utils.data.DataLoader(dataset=features,
                                        batch_size=args.batch_size,
                                        shuffle=False,
                                        num_workers=0,
-                                       collate_fn=batch_fn)
+                                       collate_fn=lambda x: dataset.batch_audio(x, max_frames=None))
     i_next = 0
     zr_keywords = ['phonetic', 'lexical', 'syntactic', 'semantic']
     if args.zr_format:
@@ -182,14 +203,18 @@ def save_activations(activations, output_dir, fnames, output_format):
     if not output_dir.exists():
         output_dir.mkdir(parents=True, exist_ok=True)
     for i, act in enumerate(activations):
-        fpath = (output_dir / fnames[i]).with_suffix(f'.{output_format}')
-        if output_format == 'txt':
+        fpath = (output_dir / fnames[i]).with_suffix(f'{output_format}')
+        fpath.parent.mkdir(parents=True, exist_ok=True)
+        # hack to be able to use output of attention layer for sSIMI
+        if len(act.shape) == 1:
+            act = torch.cat((act[None, :], act[None, :]))
+        if output_format == '.txt':
             act = act.detach().cpu().numpy()
             np.savetxt(fpath, act)
-        elif output_format == 'npy':
+        elif output_format == '.npy':
             act = act.detach().cpu().numpy()
             np.save(fpath, act)
-        elif output_format == 'pt':
+        elif output_format == '.pt':
             act = act.detach().cpu()
             torch.save(act, fpath)
 

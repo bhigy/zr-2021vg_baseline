@@ -1,0 +1,7 @@
+data/activations
+data/fairseq-bin-data
+data/onehot
+data/quantized
+data/submission
+exps
+results
