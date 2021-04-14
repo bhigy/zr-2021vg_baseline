@@ -203,18 +203,18 @@ def save_activations(activations, output_dir, fnames, output_format):
     if not output_dir.exists():
         output_dir.mkdir(parents=True, exist_ok=True)
     for i, act in enumerate(activations):
-        fpath = (output_dir / fnames[i]).with_suffix(f'{output_format}')
+        fpath = (output_dir / fnames[i]).with_suffix(f'.{output_format}')
         fpath.parent.mkdir(parents=True, exist_ok=True)
         # hack to be able to use output of attention layer for sSIMI
         if len(act.shape) == 1:
             act = torch.cat((act[None, :], act[None, :]))
-        if output_format == '.txt':
+        if output_format == 'txt':
             act = act.detach().cpu().numpy()
             np.savetxt(fpath, act)
-        elif output_format == '.npy':
+        elif output_format == 'npy':
             act = act.detach().cpu().numpy()
             np.save(fpath, act)
-        elif output_format == '.pt':
+        elif output_format == 'pt':
             act = act.detach().cpu()
             torch.save(act, fpath)
 
