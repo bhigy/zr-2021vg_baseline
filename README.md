@@ -77,6 +77,63 @@ zerospeech2021-evaluate ~/corpora/zerospeech2021 data/submission/vg-rnn0 --no-le
 python <path_to_libri-light_eval>/eval_ABX.py data/activations/rnn0/  ~/corpora/zerospeech2021/phonetic/dev-clean/dev-clean.item --file_extension '.pt' --out results/abx/rnn0 --feature_size 0.02 --distance_mode 'cosine'
 ```
 
+## Full evaluation pipeline
+
+```
+# Extract activations for ABX task
+python extract_activations.py exps/vg/net.15.pt /private/home/marvinlvn/DATA/CPC_data/test/zerospeech2021/phonetic/dev-clean vg_net_15/phonetic/dev-clean --batch_size 8 --layer rnn0 --output_file_extension 'txt' --file_extension wav
+python extract_activations.py exps/vg/net.15.pt /private/home/marvinlvn/DATA/CPC_data/test/zerospeech2021/phonetic/dev-other vg_net_15/phonetic/dev-other --batch_size 8 --layer rnn0 --output_file_extension 'txt' --file_extension wav
+
+# Extract activations for sSIMI task
+python extract_activations.py exps/vg/net.15.pt /private/home/marvinlvn/DATA/CPC_data/test/zerospeech2021/semantic/dev/librispeech vg_net_15/semantic/dev/librispeech --batch_size 8 --layer rnn0 --output_file_extension 'txt' --file_extension wav
+python extract_activations.py exps/vg/net.15.pt /private/home/marvinlvn/DATA/CPC_data/test/zerospeech2021/semantic/dev/synthetic vg_net_15/semantic/dev/synthetic --batch_size 8 --layer rnn0 --output_file_extension 'txt' --file_extension wav
+
+# Checking format is OK
+zerospeech2021-validate vg_net_15 --no-lexical --no-syntactic --only-dev
+
+# Running the evaluation
+zerospeech2021-evaluate /private/home/marvinlvn/DATA/CPC_data/test/zerospeech2021 submission_test/ --no-syntactic --no-lexical
+```
+
+## Instructions for VG model trained from CPC representations
+
+First, let's get the baseline of ZeroSpeech 2021 :
+
+```bash
+mkdir zr2021_models && cd zr2021_models
+curl https://download.zerospeech.com/2021/baseline_checkpoints.tar.gz | tar xz
+echo "{}" > checkpoints/CPC-small-kmeans50/cpc_ls100/checkpoint_logs.json
+echo "{}" > checkpoints/CPC-big-kmeans50/cpc_ll6k/checkpoint_logs.json
+
+cd ..
+```
+
+This folder contains pretrained CPC models from which the representations will be extracted.
+We can now extract audio and visual features by typing : 
+
+```bash
+python -m platalea.utils.preprocessing flickr8k --flicrk8k_root ~/corpora/flickr8k \
+  --cpc_model_path zr2021_models/checkpoints/CPC-small-kmeans50/cpc_ls100/checkpoint_170.pt \
+  --audio_features_fn cpc_small.memmap
+```
+
+Similary, you can choose to train from CPC representations by typing :
+
+```bash
+python -m platalea.utils.preprocessing flickr8k --flicrk8k_root ~/corpora/flickr8k \
+  --cpc_model_path zr2021_models/checkpoints/CPC-big-kmeans50/cpc_ll6k/checkpoint_32.pt \
+  --audio_features_fn cpc_big_2nd_layer.memmap --cpc_gru_level 2
+```
+
+And train the visually ground model :
+
+```bash
+mkdir -p exps/cpc_vg
+cd exps/cpc_vg
+cp ../../train_cpc_vg.py .
+python train_cpc_vg.py flickr8k --flickr8k_root ~/corpora/flickr8k
+```
+
 ## Instructions for training CPC (comparison with the audio-only baseline)
 
 ### Data Preparation
