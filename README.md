@@ -61,6 +61,7 @@ Finally, pretrained models can be found [here](https://download.zerospeech.com).
 ## Steps
 
 We present now in more details the different steps necessary to train the full baseline systems and evaluate them.
+
 * **train_vg.py**: trains the VG model.
 
 ```bash
