@@ -1,6 +1,8 @@
 data/activations
 data/fairseq-bin-data
+data/features
 data/onehot
+data/proba
 data/quantized
 data/submission
 exps

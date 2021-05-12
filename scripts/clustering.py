@@ -12,7 +12,7 @@ import sys
 import time
 import torch
 
-from data import SequentialData
+from scripts.data import SequentialData
 
 
 def parseArgs(argv):
@@ -67,57 +67,64 @@ def parseArgs(argv):
     return parser.parse_args(argv)
 
 
-if __name__ == "__main__":
+def main(pathActivations, pathOutput, nGroups=1, nClusters=50, MAX_ITER=100,
+         batchSizeGPU=50, debug=False, extension='.pt', getDistanceEstimation=False,
+         load=False, perIterSize=-1, recursionLevel=2, save=False, save_last=5,
+         seqList=None):
+    # Test the extension is valid
+    if extension not in ['.txt', '.npy', '.pt']:
+        raise ValueError(f'Activation file extension invalid ({extension})')
+
     torch.cuda.empty_cache()
 
-    args = parseArgs(sys.argv[1:])
+    args = argparse.Namespace(**locals())
     # Export absolute paths for later use
-    args.pathActivations = os.path.abspath(args.pathActivations)
-    args.pathOutput = os.path.abspath(args.pathOutput)
+    pathActivations = os.path.abspath(pathActivations)
+    pathOutput = os.path.abspath(pathOutput)
 
-    if not args.load:
-        assert os.path.exists(args.pathOutput) is False, \
-            f"The output file {args.pathOutput} already exists, please check the option --load !"
-        assert os.path.exists(os.path.join(os.path.dirname(args.pathOutput), "checkpoint_last.pt")) is False, \
+    if not load:
+        assert os.path.exists(pathOutput) is False, \
+            f"The output file {pathOutput} already exists, please check the option --load !"
+        assert os.path.exists(os.path.join(os.path.dirname(pathOutput), "checkpoint_last.pt")) is False, \
             "Found last_checkpoint.pt in the output directory, please check the option --load !"
 
     print(args)
-    seqNames, speakers = findAllSeqs(args.pathActivations,
-                                     speaker_level=args.recursionLevel,
-                                     extension=args.extension,
+    seqNames, speakers = findAllSeqs(pathActivations,
+                                     speaker_level=recursionLevel,
+                                     extension=extension,
                                      loadCache=True)
 
-    if args.seqList is not None:
-        seqNames = filterSeqs(args.seqList, seqNames)
-    if args.debug:
+    if seqList is not None:
+        seqNames = filterSeqs(seqList, seqNames)
+    if debug:
         nsamples = 1000
         print(f"Debug mode activated, get only {nsamples} samples!")
         shuffle(seqNames)
         seqNames = seqNames[:nsamples]
-    if args.getDistanceEstimation:
+    if getDistanceEstimation:
         shuffle(seqNames)
         seqNames = seqNames[:5000]
 
     print("")
-    print(f'Loading activations at {args.pathActivations}')
+    print(f'Loading activations at {pathActivations}')
     start_time = time.time()
-    dataset = SequentialData(args.pathActivations, seqNames, None)
+    dataset = SequentialData(pathActivations, seqNames, None)
     print(f"Dataset loaded in {time.time()-start_time} seconds !")
     print("")
 
     nGPUs = torch.cuda.device_count()
     if nGPUs == 0:
         raise RuntimeError('No GPU found')
-    batchSize = args.batchSizeGPU * nGPUs
+    batchSize = batchSizeGPU * nGPUs
     dataloader = dataset.getDataLoader(batchSize, numWorkers=0)
     print(f"Length of dataLoader: {len(dataloader)}")
     print("")
 
     # Check if dir exists
-    if not os.path.exists(os.path.dirname(args.pathOutput)) and os.path.dirname(args.pathOutput):
-        Path(os.path.dirname(args.pathOutput)).mkdir(parents=True, exist_ok=True)
+    if not os.path.exists(os.path.dirname(pathOutput)) and os.path.dirname(pathOutput):
+        Path(os.path.dirname(pathOutput)).mkdir(parents=True, exist_ok=True)
 
-    pathConfig = f"{os.path.splitext(args.pathOutput)[0]}_args.json"
+    pathConfig = f"{os.path.splitext(pathOutput)[0]}_args.json"
     with open(pathConfig, 'w') as file:
         json.dump(vars(args), file, indent=2)
 
@@ -126,12 +133,12 @@ if __name__ == "__main__":
     start_time = time.time()
     # Using a dumb lambda function to skip feature extraction as we start from
     # the activations
-    clusters = kMeanGPU(dataloader, lambda x: x, args.nClusters, args.nGroups,
-                        perIterSize=args.perIterSize,
-                        MAX_ITER=args.MAX_ITER,
-                        save=args.save, load=args.load,
-                        save_dir=os.path.dirname(args.pathOutput),
-                        save_last=args.save_last,
+    clusters = kMeanGPU(dataloader, lambda x: x, nClusters, nGroups,
+                        perIterSize=perIterSize,
+                        MAX_ITER=MAX_ITER,
+                        save=save, load=load,
+                        save_dir=os.path.dirname(pathOutput),
+                        save_last=save_last,
                         ).cpu()
 
     print(f'Ran clustering '
@@ -139,8 +146,13 @@ if __name__ == "__main__":
 
     clusterModule = kMeanCluster(clusters)
     out_state_dict["state_dict"] = clusterModule.state_dict()
-    out_state_dict["n_clusters"] = args.nClusters
+    out_state_dict["n_clusters"] = nClusters
     out_state_dict['dim'] = clusters.size(2)
-    torch.save(out_state_dict, args.pathOutput)
+    torch.save(out_state_dict, pathOutput)
     with open(pathConfig, 'w') as file:
         json.dump(vars(args), file, indent=2)
+
+
+if __name__ == "__main__":
+    args = parseArgs(sys.argv[1:])
+    main(**vars(args))

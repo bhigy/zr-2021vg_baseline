@@ -120,7 +120,7 @@ class SequentialData(Dataset):
 
     def parseNextDataBlock(self):
         # To accelerate the process a bit
-        self.nextData.sort(key=lambda x: (x[0], x[1]))
+        self.nextData.sort(key=lambda x: x[0])
         tmpData = []
 
         for seqName, seq in self.nextData:

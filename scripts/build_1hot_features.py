@@ -8,7 +8,7 @@ import sys
 from time import time
 import torch
 
-from utils.utils_functions import writeArgs
+from scripts.utils.utils_functions import writeArgs
 
 
 def parseArgs(argv):

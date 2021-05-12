@@ -20,26 +20,23 @@ def parseArgs(argv):
     return parser.parse_args(argv)
 
 
-def main(argv):
-    # Args parser
-    args = parseArgs(argv)
-
+def main(pathQuantizedActivations, pathOutput, seqList=None):
     # Load quantized activations
     data = {}
-    for line in open(args.pathQuantizedActivations).readlines():
+    for line in open(pathQuantizedActivations).readlines():
         split = line.split()
         data[split[0]] = split[1].split(',')
 
     # Filter data
-    if args.seqList is not None:
-        seqList = [line.rstrip('\n') for line in open(args.seqList).readlines()]
+    if seqList is not None:
+        seqList = [line.rstrip('\n') for line in open(seqList).readlines()]
         data_filtered = {k: data[k] for k in seqList}
         data = data_filtered
 
-    with open(args.pathOutput, 'w') as f:
+    with open(pathOutput, 'w') as f:
         f.writelines([(' ').join(d) + '\n' for d in data.values()])
 
 
 if __name__ == "__main__":
-    args = sys.argv[1:]
-    main(args)
+    args = parseArgs(sys.argv[1:])
+    main(**vars(args))

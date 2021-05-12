@@ -1,37 +1,70 @@
 # ZeroSpeech2021-VG &mdash; Baselines
 
-Baselines for the Zero-Resources Speech Challenge using Visually-Grounded Models of Spoken Language, 2021 edition.
+This repository contains the code to run the baselines for the Zero-Resource Speech Challenge using Visually-Grounded Models of Spoken Language, 2021 edition.
+
 
 ## Installation
 
+The package can be installed using following commands:
+
 ```bash
-conda create --name zrmm python=3.8 & conda activate zrmm
+conda create --name zrvg python=3.8 & conda activate zrvg
 python -m pip install -r requirements.txt
 ```
 
+
+## Description of the baselines
+
+
 ## Instructions for running the baselines
 
-The baselines are based on the baselines for [Zerospeech 2021 challenge](https://github.com/bootphon/zerospeech2021_baseline), with the CPC-based acoustic model replaced by a visually-grounded (VG) model similar to the *speech-image* model described in [[1-2]](README.md#references).
+The baselines are based on the baselines for the [Zerospeech 2021 challenge](https://github.com/bootphon/zerospeech2021_baseline) [[1]](README.md#reference), with the CPC-based acoustic model replaced by or complemented with a visually-grounded (VG) model similar to the *speech-image* model described in [[2-3]](README.md#references).
 
 ### Datasets
 
-We trained our baselines with Flickr8K. To reproduce our results, you need to download:
-* [Flickr8K](http://hockenmaier.cs.illinois.edu/Framing_Image_Description/KCCA.html) [1].
-  Note that downloading from the official website seems broken at the moment.
-  Alternatively, the dataset can be obtained from [here](https://github.com/jbrownlee/Datasets/blob/master/Flickr8k_Dataset.names).
-* The [Flickr Audio Caption Corpus](https://groups.csail.mit.edu/sls/downloads/flickraudio/) [2].
-* Some additional [metadata files](https://surfdrive.surf.nl/files/index.php/s/EF1bA9YYfhiBxoN).
+We trained our baselines with SpokenCOCO (for the visually-grounded model) and LibriSpeech. To evaluate the models, you will additionally need the [ZeroSpeech 2021 dataset](https://download.zerospeech.com).
 
-Create a folder to store the dataset (we will assume here that the folder is `~/corpora/flickr8k`)  and move all the files you downloaded there, then extract the content of the archives.
+#### SpokenCOCO
 
-To evaluate models, you will additionally need to download the [ZeroSpeech 2021 dataset](https://download.zerospeech.com). We assume here that the dataset is stored under `~/corpora/zerospeech2021`.
+You need to download:
+* [COCO images](https://cocodataset.org/#download). SpokenCOCO is based on the 2014 train/val/test sets.
+* [SpokenCOCO](https://groups.csail.mit.edu/sls/downloads/placesaudio/index.cgi)
 
-### Preprocessing
+Create a folder to store the dataset (we will assume here that the folder is `~/corpora/spokencoco`) and extract the content of the different archives under this folder.
 
-Run the preprocessing script to extract input features from Flickr8K:
+To train the visually-grounded model, you will need to preprocess the dataset to extract visual and audio features. This can conveniantly be done by running:
 
 ```bash
-python -m platalea.utils.preprocessing flickr8k --flicrk8k_root ~/corpora/flickr8k
+python -m platalea.utils.preprocessing spokencoco
+```
+
+#### LibriSpeech
+
+LibriSpeech can be downloaded from [here](http://www.openslr.org/12/).
+
+The low-budget baseline is trained on the *train-clean-100* subset. The high budget baseline uses in addition the *train-clean-300* and *train-other-500* subsets. In that later case, create a folder called *train-960* and symlink/copy the files from the other 3 subsets under this folder. In all cases, you will also need the *dev-clean* and *test-clean* subsets.
+
+As previously, we will assume here that the data is stored under `~/corpora/LibriSpeech`.
+
+#### ZeroSpeech 2021
+
+To evaluate models, you will finally need to download the [ZeroSpeech 2021 dataset](https://download.zerospeech.com). We assume here that the dataset is stored under `~/corpora/zerospeech2021`.
+
+### Training and evaluation
+
+The two baselines are complex pipelines. Training and evaluating them requires to follow many steps in a specific order, alternating the training of the different components with the extraction of the information necessary for each step. To simplify the reproduction of our results, we provide two scripts, `run_lowbudget.py` and `run_highbudget.py`, that can take care of the complete process automatically.
+
+More details about the different options they provide can be obtained using the parameter `-h`. We also provide more details on the different steps [below](README.md#steps).
+
+Finally, pretrained models can be found [here](https://download.zerospeech.com). Simply unzip the archive under the repository root directory. The scripts `run_lowbudget.py` and `run_highbudget.py` will automatically detect the presence of a model's checkpoint and skip the training of that component.
+
+## Steps
+
+We present now in more details the different steps necessary to train the full baseline systems and evaluate them.
+* **train_vg.py**: trains the VG model.
+
+```bash
+python -m scripts.train_vg spokencoco
 ```
 
 ### Training of the VG model
@@ -48,24 +81,24 @@ python train_vg.py flickr8k --flickr8k_root ~/corpora/flickr8k
 ### Extracting activations
 
 In order to compute the ABX score or train the k-means clustering, the activations of one of the GRU layers need to be extracted.
-This can be done with the script `extract_activations.py`; e.g., for the first GRU layer (`rnn0`), run:
+This can be done with the script `scripts/extract_activations.py`; e.g., for the first GRU layer (`rnn0`), run:
 
 ```bash
-python extract_activations.py exps/vgslu/<net.best.pt> ~/corpora/flickr8k/flickr_audio/wavs data/activations/flickr8k/train \
+python -m extract_activations exps/vgslu/<net.best.pt> ~/corpora/flickr8k/flickr_audio/wavs data/activations/flickr8k/train \
     --batch_size 8 --layer rnn0 --output_file_extension '.pt' \
     --seqList data/datasets/flicrk8k/flickr8k_train.txt --recursionLevel 0
 ```
 
 Where net.best.pt should be replaced with the checkpoint corresponding to the best epoch (see `exps/vg/results.json`).
 The GRU layers are named `rnn0` to `rnn3`.
-See `python extract_activations.py --help` for more options.
+See `python -m scripts.extract_activations --help` for more options.
 
 ### Computing ABX scores
 
-As explained in previous section, you will first need to extract activations for the zerospeech2021 dataset using the script `extract_activations.py`.
+As explained in previous section, you will first need to extract activations for the zerospeech2021 dataset using the script `scripts/extract_activations.py`.
 
 ```bash
-python extract_activations.py exps/vg/<net.best.pt> ~/corpora/zerospeech2021/phonetic/dev-clean/ data/activations/zerospeech2021 \
+python -m script.extract_activations exps/vg/<net.best.pt> ~/corpora/zerospeech2021/phonetic/dev-clean/ data/activations/zerospeech2021 \
   --batch_size 8 --layer rnn0 \
   --output_file_extension '.pt' --file_extension '.wav'
 ```
@@ -96,7 +129,7 @@ python clustering.py --recursionLevel 0 --nClusters 50 --MAX_ITER 150 --save --b
 To train the k-means clustering on LibriSpeech train-clean-100 set, run:
 
 ```bash
-python extract_activations.py exps/vgslu/net.best.pt ~/corpora/LibriSpeech/train-clean-100 data/activations/librispeech/train-clean-100 --batch_size 8 --layer rnn0 --output_file_extension '.pt' --file_extension '.flac'
+python -m scripts.extract_activations exps/vgslu/net.best.pt ~/corpora/LibriSpeech/train-clean-100 data/activations/librispeech/train-clean-100 --batch_size 8 --layer rnn0 --output_file_extension '.pt' --file_extension '.flac'
 python clustering.py --recursionLevel 1 --nClusters 50 --MAX_ITER 150 --save --batchSizeGPU 500 data/activations/librispeech/train-clean-100/rnn0 exps/kmeans/librispeech/rnn0
 ```
 
@@ -203,7 +236,11 @@ python /path/to/CPC_audio/cpc/train.py \
 
 ## References
 
-[1] Chrupała, G. (2019). Symbolic Inductive Bias for Visually Grounded Learning of Spoken Language. Proceedings of the 57th Annual Meeting of the Association for Computational Linguistics, 6452–6462. https://doi.org/10.18653/v1/P19-1647
+[1] Nguyen, T. A., de Seyssel, M., Rozé, P., Rivière, M., Kharitonov, E., Baevski, A., Dunbar, E., & Dupoux, E. (2020). The Zero Resource Speech Benchmark 2021: Metrics and baselines for unsupervised spoken language modeling. http://arxiv.org/abs/2011.11588
 
-[2] Higy, B., Elliott, D., & Chrupała, G. (2020). Textual Supervision for Visually Grounded Spoken Language Understanding. Findings of the Association for Computational Linguistics: EMNLP 2020, 2698–2709. https://doi.org/10.18653/v1/2020.findings-emnlp.244
+[2] Chrupała, G. (2019). Symbolic Inductive Bias for Visually Grounded Learning of Spoken Language. Proceedings of the 57th Annual Meeting of the Association for Computational Linguistics, 6452–6462. https://doi.org/10.18653/v1/P19-1647
+
+[3] Higy, B., Elliott, D., & Chrupała, G. (2020). Textual Supervision for Visually Grounded Spoken Language Understanding. Findings of the Association for Computational Linguistics: EMNLP 2020, 2698–2709. https://doi.org/10.18653/v1/2020.findings-emnlp.244
+
+[4] Hsu, W.-N., Harwath, D., Song, C., & Glass, J. (2020). Text-Free Image-to-Speech Synthesis Using Learned Segmental Units. http://arxiv.org/abs/2012.15454
 

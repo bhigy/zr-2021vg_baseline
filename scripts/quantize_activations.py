@@ -10,9 +10,8 @@ from time import time
 import torch
 from cpc.dataset import filterSeqs, findAllSeqs
 
-from utils.utils_functions import readArgs, writeArgs, loadClusterModule
-
-from data import loadFile
+from scripts.utils.utils_functions import readArgs, writeArgs, loadClusterModule
+from scripts.data import loadFile
 
 
 def quantize_file(file_path, clusterModule, cpu=False):
@@ -82,62 +81,66 @@ def parseArgs(argv):
     return parser.parse_args(argv)
 
 
-def main(argv):
-    # Args parser
-    args = parseArgs(argv)
+def main(pathClusteringCheckpoint, pathActivations, pathOutputDir,
+         cpu=False, debug=False, file_extension=".pt", recursionLevel=2,
+         resume=False, seqList=None, split=None):
+    # Test the extension is valid
+    if file_extension not in ['.txt', '.npy', '.pt']:
+        raise ValueError(f'Activation file extension invalid ({file_extension})')
 
+    args = argparse.Namespace(**locals())
     print("=============================================================")
-    print(f"Quantizing data from {args.pathActivations}")
+    print(f"Quantizing data from {pathActivations}")
     print("=============================================================")
 
     # Get splits
-    if args.split:
-        assert len(args.split.split("-")) == 2 \
-           and int(args.split.split("-")[1]) >= int(args.split.split("-")[0]) >= 1, \
+    if split:
+        assert len(split.split("-")) == 2 \
+           and int(split.split("-")[1]) >= int(split.split("-")[0]) >= 1, \
                "SPLIT must be under the form idxSplit-numSplits (numSplits >= idxSplit >= 1), eg. --split 1-20"
-        idx_split, num_splits = args.split.split("-")
+        idx_split, num_splits = split.split("-")
         idx_split = int(idx_split)
         num_splits = int(num_splits)
 
     # Find all sequences
     print("")
-    print(f"Looking for all {args.file_extension} files in {args.pathActivations}")
-    seqNames, _ = findAllSeqs(args.pathActivations,
-                              speaker_level=args.recursionLevel,
-                              extension=args.file_extension,
+    print(f"Looking for all {file_extension} files in {pathActivations}")
+    seqNames, _ = findAllSeqs(pathActivations,
+                              speaker_level=recursionLevel,
+                              extension=file_extension,
                               loadCache=True)
-    if len(seqNames) == 0 or not os.path.splitext(seqNames[0][1])[1].endswith(args.file_extension):
+    if len(seqNames) == 0 or not os.path.splitext(seqNames[0][1])[1].endswith(file_extension):
         print("Seems like the _seq_cache.txt does not contain the correct extension, reload the file list")
-        seqNames, _ = findAllSeqs(args.pathActivations,
-                                  speaker_level=args.recursionLevel,
-                                  extension=args.file_extension,
+        seqNames, _ = findAllSeqs(pathActivations,
+                                  speaker_level=recursionLevel,
+                                  extension=file_extension,
                                   loadCache=False)
     print(f"Done! Found {len(seqNames)} files!")
 
     # Filter specific sequences
-    if args.seqList is not None:
-        seqNames = filterSeqs(args.seqList, seqNames)
+    if seqList is not None:
+        seqNames = filterSeqs(seqList, seqNames)
         print(f"Done! {len(seqNames)} remaining files after filtering!")
     assert len(seqNames) > 0, \
         "No file to be quantized!"
 
     # Check if directory exists
-    pathOutputDir = Path(args.pathOutputDir)
+    pathOutputDir = Path(pathOutputDir)
     if not pathOutputDir.exists():
         print("")
-        print(f"Creating the output directory at {args.pathOutputDir}")
+        print(f"Creating the output directory at {pathOutputDir}")
         pathOutputDir.mkdir(parents=True, exist_ok=True)
     writeArgs(pathOutputDir / "_info_args.json", args)
 
     # Check if output file exists
-    if not args.split:
+    if not split:
         nameOutput = "quantized_outputs.txt"
     else:
         nameOutput = f"quantized_outputs_split_{idx_split}-{num_splits}.txt"
     outputFile = pathOutputDir / nameOutput
 
     # Get splits
-    if args.split:
+    if split:
         startIdx = len(seqNames) // num_splits * (idx_split-1)
         if idx_split == num_splits:
             endIdx = len(seqNames)
@@ -149,7 +152,7 @@ def main(argv):
               f"with {len(seqNames)} files (idx in range({startIdx}, {endIdx})).")
 
     # Debug mode
-    if args.debug:
+    if debug:
         nsamples = 20
         print("")
         print(f"Debug mode activated, only load {nsamples} samples!")
@@ -158,7 +161,7 @@ def main(argv):
 
     # Continue
     addEndLine = False  # to add end line (\n) to first line or not
-    if args.resume:
+    if resume:
         if outputFile.exists():
             with open(outputFile, 'r') as f:
                 lines = [line for line in f]
@@ -177,7 +180,7 @@ def main(argv):
         "No file to be quantized!"
 
     # Load Clustering args
-    pathCheckpoint = Path(args.pathClusteringCheckpoint)
+    pathCheckpoint = Path(pathClusteringCheckpoint)
     assert pathCheckpoint.suffix == ".pt"
     if Path(str(pathCheckpoint.with_suffix('')) + '_args.json').exists():
         pathConfig = Path(str(pathCheckpoint.with_suffix('')) + '_args.json')
@@ -195,7 +198,7 @@ def main(argv):
     print("")
     print(f"Loading ClusterModule at {pathCheckpoint}")
     clusterModule = loadClusterModule(pathCheckpoint)
-    if not args.cpu:
+    if not cpu:
         clusterModule.cuda()
     print("ClusterModule loaded!")
 
@@ -210,10 +213,10 @@ def main(argv):
         bar.update(index)
 
         file_path = vals[1]
-        file_path = os.path.join(args.pathActivations, file_path)
+        file_path = os.path.join(pathActivations, file_path)
 
         # Quantizing
-        quantLine = quantize_file(file_path, clusterModule, cpu=args.cpu)
+        quantLine = quantize_file(file_path, clusterModule, cpu=cpu)
 
         # Save the outputs
         file_name = os.path.splitext(os.path.basename(file_path))[0]
@@ -229,5 +232,5 @@ def main(argv):
 
 
 if __name__ == "__main__":
-    args = sys.argv[1:]
-    main(args)
+    args = parseArgs(sys.argv[1:])
+    main(**vars(args))

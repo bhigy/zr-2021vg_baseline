@@ -12,7 +12,7 @@ from cpc.dataset import findAllSeqs, filterSeqs
 import platalea.dataset as dataset
 from platalea.utils.preprocessing import audio_features
 
-from utils.utils_functions import writeArgs
+from scripts.utils.utils_functions import writeArgs
 
 
 def parseArgs(argv):
@@ -69,7 +69,7 @@ def parseArgs(argv):
         help="The speaker recursionLevel in the training dataset (default: 2).")
     parser.add_argument(
         '--seqList', type=str, default=None,
-        help="Specify a txt file containing the list of sequences (file names)" \
+        help="Specify a txt file containing the list of sequences (file names)"
         'to be included (default: None). If not speficied, include all files found in pathActivations.')
     return parser.parse_args(argv)
 
@@ -80,12 +80,13 @@ def compute_audio_features(audio_fpaths, max_size_seq, _audio_feat_config):
     return audio_features(audio_fpaths, audio_config)
 
 
-def main(argv):
-    # Args parser
-    args = parseArgs(argv)
+def main(pathCheckpoint, pathDB, pathOutputDir, batch_size=8, debug=False,
+         file_extension='.wav', layer='all', max_size_seq=64000,
+         output_file_extension='.txt', recursionLevel=2, seqList=None):
 
+    args = argparse.Namespace(**locals())
     print("=============================================================")
-    print(f"Extract activations from VG model for {args.pathDB}")
+    print(f"Extract activations from VG model for {pathDB}")
     print("=============================================================")
 
     # Initializing feature extraction config
@@ -104,34 +105,34 @@ def main(argv):
 
     # Find all sequences
     print("")
-    print(f"Looking for all {args.file_extension} files in {args.pathDB}")
-    seqNames, _ = findAllSeqs(args.pathDB,
-                              speaker_level=args.recursionLevel,
-                              extension=args.file_extension,
+    print(f"Looking for all {file_extension} files in {pathDB}")
+    seqNames, _ = findAllSeqs(pathDB,
+                              speaker_level=recursionLevel,
+                              extension=file_extension,
                               loadCache=True)
-    if len(seqNames) == 0 or not os.path.splitext(seqNames[0][-1])[1].endswith(args.file_extension):
+    if len(seqNames) == 0 or not os.path.splitext(seqNames[0][-1])[1].endswith(file_extension):
         print("Seems like the _seq_cache.txt does not contain the correct extension, reload the file list")
-        seqNames, _ = findAllSeqs(args.pathDB,
-                                  speaker_level=args.recursionLevel,
-                                  extension=args.file_extension,
+        seqNames, _ = findAllSeqs(pathDB,
+                                  speaker_level=recursionLevel,
+                                  extension=file_extension,
                                   loadCache=False)
     print(f"Done! Found {len(seqNames)} files!")
 
     # Filter specific sequences
-    if args.seqList is not None:
-        seqNames = filterSeqs(args.seqList, seqNames)
+    if seqList is not None:
+        seqNames = filterSeqs(seqList, seqNames)
         print(f"Done! {len(seqNames)} remaining files after filtering!")
     assert len(seqNames) > 0, \
         "No file to be processed!"
 
-    pathOutputDir = Path(args.pathOutputDir)
+    pathOutputDir = Path(pathOutputDir)
     print("")
-    print(f"Creating the output directory at {args.pathOutputDir}")
+    print(f"Creating the output directory at {pathOutputDir}")
     pathOutputDir.mkdir(parents=True, exist_ok=True)
     writeArgs(pathOutputDir / "_info_args.json", args)
 
     # Debug mode
-    if args.debug:
+    if debug:
         nsamples = 20
         print("")
         print(f"Debug mode activated, only load {nsamples} samples!")
@@ -140,10 +141,9 @@ def main(argv):
 
     # Loading audio features
     print("")
-    print(f"Loading audio features for {args.pathDB}")
-    pathDB = Path(args.pathDB)
-
-    if args.seqList is None:
+    print(f"Loading audio features for {pathDB}")
+    pathDB = Path(pathDB)
+    if seqList is None:
         cache_fpath = pathDB / '_mfcc_features.pt'
         if cache_fpath.exists():
             print(f"Found cached features ({cache_fpath}). Loading them.")
@@ -151,25 +151,25 @@ def main(argv):
         else:
             print('No cached features. Computing them from scratch.')
             audio_fpaths = [pathDB / s[1] for s in seqNames]
-            features = compute_audio_features(audio_fpaths, args.max_size_seq, _audio_feat_config)
+            features = compute_audio_features(audio_fpaths, max_size_seq)
             print(f'Caching features ({cache_fpath}).')
             torch.save(features, cache_fpath)
     else:
         print('Computing features.')
         audio_fpaths = [pathDB / s[1] for s in seqNames]
-        features = compute_audio_features(audio_fpaths, args.max_size_seq, _audio_feat_config)
+        features = compute_audio_features(audio_fpaths, max_size_seq)
 
     # Load VG model
     print("")
-    print(f"Loading VG model from {args.pathCheckpoint}")
-    vg_model = torch.load(args.pathCheckpoint)
+    print(f"Loading VG model from {pathCheckpoint}")
+    vg_model = torch.load(pathCheckpoint)
     print("VG model loaded!")
 
     # Extracting activations
     print("")
-    print(f"Extracting activations and saving outputs to {args.pathOutputDir}...")
+    print(f"Extracting activations and saving outputs to {pathOutputDir}...")
     data = torch.utils.data.DataLoader(dataset=features,
-                                       batch_size=args.batch_size,
+                                       batch_size=batch_size,
                                        shuffle=False,
                                        num_workers=0,
                                        collate_fn=lambda x: dataset.batch_audio(x, max_frames=None))
@@ -187,8 +187,8 @@ def main(argv):
 
     for au, l in tqdm(data):
         activations = vg_model.SpeechEncoder.introspect(au.cuda(), l.cuda())
-        fnames = [s[1] for s in seqNames[i_next: i_next + args.batch_size]]
-        if args.layer == 'all':
+        fnames = [s[1] for s in seqNames[i_next: i_next + batch_size]]
+        if layer == 'all':
             for k in activations:
                 save_activations(activations[k], pathOutputDir / k / suffix, fnames,
                                  args.output_file_extension)
@@ -217,8 +217,10 @@ def save_activations(activations, output_dir, fnames, output_format):
         elif output_format == 'pt':
             act = act.detach().cpu()
             torch.save(act, fpath)
+        else:
+            raise ValueError(f'Output format {output_format} not supported for activations')
 
 
 if __name__ == "__main__":
-    args = sys.argv[1:]
-    main(args)
+    args = parseArgs(sys.argv[1:])
+    main(**vars(args))
