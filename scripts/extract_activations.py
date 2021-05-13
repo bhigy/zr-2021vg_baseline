@@ -43,8 +43,8 @@ def parseArgs(argv):
         help='Maximal number of frames to consider in each chunk when '
              'extracting activations (defaut: 64000).')
     parser.add_argument(
-        '--output_file_extension', type=str, default="txt",
-        choices=['txt', 'npy', 'pt'],
+        '--output_file_extension', type=str, default=".txt",
+        choices=['.txt', '.npy', '.pt'],
         help="Extension of the audio files in the dataset (default: txt).")
     parser.add_argument(
         '--zr_format', action='store_true',
@@ -82,7 +82,10 @@ def compute_audio_features(audio_fpaths, max_size_seq, _audio_feat_config):
 
 def main(pathCheckpoint, pathDB, pathOutputDir, batch_size=8, debug=False,
          file_extension='.wav', layer='all', max_size_seq=64000,
-         output_file_extension='.txt', recursionLevel=2, seqList=None):
+         output_file_extension='.txt', recursionLevel=2, seqList=None,
+         audio_features_fn='mfcc_features.pt',
+         image_features_fn='resnet_features.pt', cpc_model_path=None,
+         cpc_gru_level=-1, zr_format=False):
 
     args = argparse.Namespace(**locals())
     print("=============================================================")
@@ -93,14 +96,14 @@ def main(pathCheckpoint, pathDB, pathOutputDir, batch_size=8, debug=False,
     # /!\ Code duplication with preprocessing.py
     # Should probably store the feature config on disk.
     _audio_feat_config = dict(type='mfcc', delta=True, alpha=0.97, n_filters=40,
-                              window_size=0.025, frame_shift=0.010, audio_features_fn=args.audio_features_fn)
-    _images_feat_config = dict(model='resnet', image_features_fn=args.image_features_fn)
+                              window_size=0.025, frame_shift=0.010, audio_features_fn=audio_features_fn)
+    _images_feat_config = dict(model='resnet', image_features_fn=image_features_fn)
 
-    if args.cpc_model_path is not None:
-        if args.audio_features_fn == 'mfcc_features.pt':
-            args.audio_features_fn = 'cpc_features.pt'
-        _audio_feat_config = dict(type='cpc', model_path=args.cpc_model_path, audio_features_fn=args.audio_features_fn,
-                                  strict=False, seq_norm=False, max_size_seq=10240, gru_level=args.cpc_gru_level,
+    if cpc_model_path is not None:
+        if audio_features_fn == 'mfcc_features.pt':
+            audio_features_fn = 'cpc_features.pt'
+        _audio_feat_config = dict(type='cpc', model_path=cpc_model_path, audio_features_fn=audio_features_fn,
+                                  strict=False, seq_norm=False, max_size_seq=10240, gru_level=cpc_gru_level,
                                   on_gpu=True)
 
     # Find all sequences
@@ -175,8 +178,8 @@ def main(pathCheckpoint, pathDB, pathOutputDir, batch_size=8, debug=False,
                                        collate_fn=lambda x: dataset.batch_audio(x, max_frames=None))
     i_next = 0
     zr_keywords = ['phonetic', 'lexical', 'syntactic', 'semantic']
-    if args.zr_format:
-        splitted_path = args.pathDB.split('/')
+    if zr_format:
+        splitted_path = pathDB.split('/')
         for keyword in zr_keywords:
             if keyword in splitted_path:
                 keyword_idx = splitted_path.index(keyword)
@@ -191,30 +194,30 @@ def main(pathCheckpoint, pathDB, pathOutputDir, batch_size=8, debug=False,
         if layer == 'all':
             for k in activations:
                 save_activations(activations[k], pathOutputDir / k / suffix, fnames,
-                                 args.output_file_extension)
-        elif args.layer in activations:
-            save_activations(activations[args.layer],
-                             pathOutputDir / args.layer / suffix, fnames,
-                             args.output_file_extension)
-        i_next += args.batch_size
+                                 output_file_extension)
+        elif layer in activations:
+            save_activations(activations[layer],
+                             pathOutputDir / layer / suffix, fnames,
+                             output_file_extension)
+        i_next += batch_size
 
 
 def save_activations(activations, output_dir, fnames, output_format):
     if not output_dir.exists():
         output_dir.mkdir(parents=True, exist_ok=True)
     for i, act in enumerate(activations):
-        fpath = (output_dir / fnames[i]).with_suffix(f'.{output_format}')
+        fpath = (output_dir / fnames[i]).with_suffix(f'{output_format}')
         fpath.parent.mkdir(parents=True, exist_ok=True)
         # hack to be able to use output of attention layer for sSIMI
         if len(act.shape) == 1:
             act = torch.cat((act[None, :], act[None, :]))
-        if output_format == 'txt':
+        if output_format == '.txt':
             act = act.detach().cpu().numpy()
             np.savetxt(fpath, act)
-        elif output_format == 'npy':
+        elif output_format == '.npy':
             act = act.detach().cpu().numpy()
             np.save(fpath, act)
-        elif output_format == 'pt':
+        elif output_format == '.pt':
             act = act.detach().cpu()
             torch.save(act, fpath)
         else:
