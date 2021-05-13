@@ -2,19 +2,19 @@
 
 This repository contains the code to run the baselines for the Zero-Resource Speech Challenge using Visually-Grounded Models of Spoken Language, 2021 edition.
 
-## Description of the baselines
-
 ## Overview of the baselines
 
-The baselines are based on the baselines for the [Zerospeech 2021 challenge](https://github.com/bootphon/zerospeech2021_baseline) [[1]](README.md#reference), with the CPC-based acoustic model replaced by or complemented with a visually-grounded (VG) model similar to the *speech-image* model described in [[2-3]](README.md#references).
+Our baseline is directly inspired by the audio-only baseline used in the [Zerospeech 2021 challenge](https://github.com/bootphon/zerospeech2021_baseline). 
+The main difference is that we use a visually grounded (VG) model to learn our speech representations. Then, the latter are fed to K-means and the language model.
+The low-budget baseline replaces the contrastive predictive model (CPC) with a VG model. While the high-budget baseline adds the VG model on top of the CPC model.
 
-|| Low-budget baseline | High-budget baseline |
+| Step | Low-budget baseline | High-budget baseline |
 ---|---|---
 | Input | MFCCs | Waveform |
-| Acooustic model (training set) | VG model (SpokenCOCO) | CPC-small (LibriSpeech-960) + <br> VG model (SpokenCOCO)|
-| Layer used to extract features | 1st recurrent layer (rnn0) | 1st recurrent layer (rnn0) |
-| Quantization | k-means (LibriSpeech-100) | k-means (LibriSpeech-100) |
-| Language Model | LSTM (LibriSpeech-960) | BERT (LibriSpeech-100) |
+| Acoustic model (training set) | VG model | CPC-small + VG model |
+| Layer used to extract features | 1st recurrent layer | 1st recurrent layer |
+| Quantization | k-means | k-means |
+| Language Model | LSTM | BERT |
 
 ## How to use ?
 
