@@ -41,7 +41,7 @@ If you downloaded LibriSpeech, you're supposed to have a folder structure that l
 └─── train-other-500
 ```
 
-Under the same folder, you'll further need to create a folder `train-full-960` that contains `train-clean-100`, `train-clean-360` and `train-other-500`.
+Under the same folder, you'll further need to create a folder `train-full-960` that contains all the sub-folders of `train-clean-100`, `train-clean-360` and `train-other-500`.
 
 
 #### ZeroSpeech 2021
