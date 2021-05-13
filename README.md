@@ -10,8 +10,8 @@ The low-budget baseline completely replaces the contrastive predictive model (CP
 
 | Step | Low-budget baseline | High-budget baseline |
 ---|---|---
-| Input | MFCCs | Waveform |
-| Acoustic model | VG model | CPC-small + VG model |
+| Input | MFCCs | CPC-small |
+| Acoustic model | VG model | VG model |
 | Quantization | K-means | K-means |
 | Language Model | LSTM | BERT large |
 
