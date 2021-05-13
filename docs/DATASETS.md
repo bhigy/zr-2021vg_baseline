@@ -1,40 +1,49 @@
 ### Datasets
 
-We trained our baselines with SpokenCOCO (for the visually-grounded model) and LibriSpeech. To evaluate the models, you will additionally need the [ZeroSpeech 2021 dataset](https://download.zerospeech.com).
+Several datasets are used to train the baseline :
 
-#### SpokenCOCO
+| Data | Use | Download link |
+---|---|---
+| COCO images 2014 | VG | https://cocodataset.org/#download |
+| SpokenCOCO | VG | https://groups.csail.mit.edu/sls/downloads/placesaudio/index.cgi|
+| Librispeech | K-means and LM | http://www.openslr.org/12 |
+| ZeroSpeech 2021 | Evaluation | https://download.zerospeech.com |
 
-You need to download:
-* [COCO images](https://cocodataset.org/#download). SpokenCOCO is based on the 2014 train/val/test sets.
-* [SpokenCOCO](https://groups.csail.mit.edu/sls/downloads/placesaudio/index.cgi)
+#### SpokenCOCO format
 
-Create a folder to store the dataset (we will assume here that the folder is `~/corpora/spokencoco`) and extract the content of the different archives under this folder.
+If you downloaded the train/val/test sets of COCO images 2014 under `~/corpora/spokencoco`, the SpokenCOCO dataset is expected to lie in the same folder.
+You'll have a folder structure that looks like :
 
-To train the visually-grounded model, you will need to preprocess the dataset to extract visual and audio features. This can conveniantly be done by running:
-
-```bash
-python -m platalea.utils.preprocessing spokencoco
+```
+~/corpora/spokencoco 
+│
+└─── train2014
+└─── val2014
+└─── SpokenCOCO
+     └─── wavs
+          └─── train
+          └─── val
 ```
 
 #### LibriSpeech
 
-LibriSpeech can be downloaded from [here](http://www.openslr.org/12/).
+If you downloaded LibriSpeech, you're supposed to have a folder structure that looks like this :
 
-The low-budget baseline is trained on the *train-clean-100* subset. The high budget baseline uses in addition the *train-clean-300* and *train-other-500* subsets. In that later case, create a folder called *train-960* and symlink/copy the files from the other 3 subsets under this folder. In all cases, you will also need the *dev-clean* and *test-clean* subsets.
+```
+~/corpora/librispeech
+│
+└─── dev-clean
+└─── dev-other
+└─── test-clean
+└─── test-other
+└─── train-clean-100
+└─── train-clean-360
+└─── train-other-500
+```
 
-As previously, we will assume here that the data is stored under `~/corpora/LibriSpeech`.
+Under the same folder, you'll further need to create a folder `train-full-960` that contains `train-clean-100`, `train-clean-360` and `train-other-500`.
+
 
 #### ZeroSpeech 2021
 
-To evaluate models, you will finally need to download the [ZeroSpeech 2021 dataset](https://download.zerospeech.com). We assume here that the dataset is stored under `~/corpora/zerospeech2021`.
-
-## References
-
-[1] Nguyen, T. A., de Seyssel, M., Rozé, P., Rivière, M., Kharitonov, E., Baevski, A., Dunbar, E., & Dupoux, E. (2020). The Zero Resource Speech Benchmark 2021: Metrics and baselines for unsupervised spoken language modeling. http://arxiv.org/abs/2011.11588
-
-[2] Chrupała, G. (2019). Symbolic Inductive Bias for Visually Grounded Learning of Spoken Language. Proceedings of the 57th Annual Meeting of the Association for Computational Linguistics, 6452–6462. https://doi.org/10.18653/v1/P19-1647
-
-[3] Higy, B., Elliott, D., & Chrupała, G. (2020). Textual Supervision for Visually Grounded Spoken Language Understanding. Findings of the Association for Computational Linguistics: EMNLP 2020, 2698–2709. https://doi.org/10.18653/v1/2020.findings-emnlp.244
-
-[4] Hsu, W.-N., Harwath, D., Song, C., & Glass, J. (2020). Text-Free Image-to-Speech Synthesis Using Learned Segmental Units. http://arxiv.org/abs/2012.15454
-
+Nothing to do for the dev/test set of ZeroSpeech 2021. We'll assume that this dataset has been download under `~/corpora/zerospeech2021`.
