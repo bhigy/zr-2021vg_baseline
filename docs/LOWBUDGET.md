@@ -62,8 +62,8 @@ To do that, we need to extract activations for LibriSpeech and quantize them usi
 
 ```bash
 python -m scripts.extract_activations exps/vg/vg-spokencoco/net.best.pt \
-    ~/corpora/LibriSpeech/train-960 \
-    data/activations/vg-spokencoco/librispeech/train-960 \
+    ~/corpora/LibriSpeech/train-full-960 \
+    data/activations/vg-spokencoco/librispeech/train-full-960 \
     --batch_size 8 --layer rnn0 --output_file_extension '.pt' \
     --file_extension '.flac' --recursionLevel 2
 python -m scripts.extract_activations exps/vg/vg-spokencoco/net.best.pt \
@@ -82,8 +82,8 @@ python -m scripts.extract_activations exps/vg/vg-spokencoco/net.best.pt \
 
 ``` bash
 python -m scripts.quantize_activations exps/kmeans/vg-spokencoco-rnn0_kmeans-librispeech100-50 \
-    data/activations/vg-spokencoco/librispeech/train-960/rnn0 \
-    data/quantized/vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-960 \
+    data/activations/vg-spokencoco/librispeech/train-full-960/rnn0 \
+    data/quantized/vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-full-960 \
     --recursionLevel 2
 python -m scripts.quantize_activations exps/kmeans/vg-spokencoco-rnn0_kmeans-librispeech100-50 \
     data/activations/vg-spokencoco/librispeech/dev-clean/rnn0 \
@@ -101,8 +101,8 @@ We can now train the model:
 ``` bash
 # Converting quantized output for fairseq
 python -m scripts.convert_for_fairseq \
-    data/quantized/vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-960/quantized_outputs.txt \
-    data/quantized/vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-960/fairseq.txt
+    data/quantized/vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-full-960/quantized_outputs.txt \
+    data/quantized/vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-full-960/fairseq.txt
 python -m scripts.convert_for_fairseq \
     data/quantized/vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/dev-clean/quantized_outputs.txt \
     data/quantized/vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/dev-clean/fairseq.txt
@@ -112,15 +112,15 @@ python -m scripts.convert_for_fairseq \
 
 # Preprocessing of the data
 fairseq.preprocess --only-source \
-    --trainpref data/quantized/vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-960/fairseq.txt \
+    --trainpref data/quantized/vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-full-960/fairseq.txt \
     --validpref data/quantized/vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/dev-clean/fairseq.txt \
     --testpref data/quantized/vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/test-clean/fairseq.txt \
-    --destdir data/fairseq-bin-data/vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-960 \
+    --destdir data/fairseq-bin-data/vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-full-960 \
     --workers 20
 
 # Training
 fairseq-train --fp16 \
-    data/fairseq-bin-data/vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-960 \
+    data/fairseq-bin-data/vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-full-960 \
     --task language_modeling \
     --save-dir exps/lm/vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-lstm-librispeech100 \
     --keep-last-epochs 2 \
@@ -145,11 +145,3 @@ fairseq-train --fp16 \
     --update-freq 1 \
     --max-update 100000
 ```
-
-## References
-
-[1] Nguyen, T. A., de Seyssel, M., Rozé, P., Rivière, M., Kharitonov, E., Baevski, A., Dunbar, E., & Dupoux, E. (2020). The Zero Resource Speech Benchmark 2021: Metrics and baselines for unsupervised spoken language modeling. http://arxiv.org/abs/2011.11588
-
-[2] Chrupała, G. (2019). Symbolic Inductive Bias for Visually Grounded Learning of Spoken Language. Proceedings of the 57th Annual Meeting of the Association for Computational Linguistics, 6452–6462. https://doi.org/10.18653/v1/P19-1647
-
-[3] Higy, B., Elliott, D., & Chrupała, G. (2020). Textual Supervision for Visually Grounded Spoken Language Understanding. Findings of the Association for Computational Linguistics: EMNLP 2020, 2698–2709. https://doi.org/10.18653/v1/2020.findings-emnlp.244

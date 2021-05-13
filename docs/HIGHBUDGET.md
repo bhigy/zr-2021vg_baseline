@@ -1,182 +1,222 @@
+# Prerequisites
 
-## Instructions for running the baselines
-
-The baselines are based on the baselines for the [Zerospeech 2021 challenge](https://github.com/bootphon/zerospeech2021_baseline) [[1]](README.md#reference), with the CPC-based acoustic model replaced by or complemented with a visually-grounded (VG) model similar to the *speech-image* model described in [[2-3]](README.md#references).
-
-### Training and evaluation
-
-The two baselines are complex pipelines. Training and evaluating them requires to follow many steps in a specific order, alternating the training of the different components with the extraction of the information necessary for each step. To simplify the reproduction of our results, we provide two scripts, `run_lowbudget.py` and `run_highbudget.py`, that can take care of the complete process automatically.
-
-More details about the different options they provide can be obtained using the parameter `-h`. We also provide more details on the different steps [below](README.md#steps).
-
-Finally, pretrained models can be found [here](https://download.zerospeech.com). Simply unzip the archive under the repository root directory. The scripts `run_lowbudget.py` and `run_highbudget.py` will automatically detect the presence of a model's checkpoint and skip the training of that component.
-
-## Steps
-
-We present now in more details the different steps necessary to train the full baseline systems and evaluate them.
-
-* **train_vg.py**: trains the VG model.
+First, we'll need to download the checkpoints of the audio-only baseline as we'll be using pretrained CPC models. 
+You can do that by running :
 
 ```bash
-python -m scripts.train_vg spokencoco
+mkdir zr2021_models
+curl https://download.zerospeech.com/2021/baseline_checkpoints.tar.gz | tar xz zr2021_models
 ```
 
-### Training of the VG model
+We'll assume that these checkpoints are stored under `~/zr2021vg_baseline/baseline_checkpoints`.
+At this point, if you have followed the instructions in the [Datasets](./docs/DATASETS.md) instructions, you should have all the required datasets and models under :
 
-The VG model can be trained by running:
+* `~/corpora/spokencoco`
+* `~/corpora/librispeech`
+* `~/corpora/zerospeech2021`
+* `~/zr2021vg_baseline/audio_only_checkpoints`
+
+Let's warm up the GPUs then !
+
+## 1) Train the visually grounded model 
+
+First, we must extract CPC representations of SpokenCOCO :
 
 ```bash
-mkdir -p exps/vg
-cd exps/vg
-cp ../../scripts/train_vg.py .
-python train_vg.py flickr8k --flickr8k_root ~/corpora/flickr8k
+python -m platalea.utils.preprocessing spokencoco --spokencoco_root ~/corpora/spokencoco \
+  --cpc_feature_size 256 --audio_features_fn cpc_small.pt \
+  --cpc_model_path ~/zr2021vg_baseline/zr2021_models/checkpoints/CPC-small-kmeans50/cpc_ls100/checkpoint_170.pt
 ```
 
-### Extracting activations
-
-In order to compute the ABX score or train the k-means clustering, the activations of one of the GRU layers need to be extracted.
-This can be done with the script `scripts/extract_activations.py`; e.g., for the first GRU layer (`rnn0`), run:
+This will create a file `~/corpora/spokencoco/cpc_small.pt` containing the CPC features of the audio files, as well as another file `~/corpora/spokencoco/resnet_features.pt` containing the visual features.
+Then, we can train the visually grounded model with :
 
 ```bash
-python -m extract_activations exps/vgslu/<net.best.pt> ~/corpora/flickr8k/flickr_audio/wavs data/activations/flickr8k/train \
-    --batch_size 8 --layer rnn0 --output_file_extension '.pt' \
-    --seqList data/datasets/flicrk8k/flickr8k_train.txt --recursionLevel 0
+mkdir -p exps/vg/cpc-small-vg-spokencoco
+cd exps/vg/cpc-small-vg-spokencoco 
+python -m scripts.train_cpc_vg spokencoco --epochs 12 --spokencoco_root ~/corpora/spokencoco --cpc_feature_size 256 --audio_features_fn cpc_small.pt
 ```
 
-Where net.best.pt should be replaced with the checkpoint corresponding to the best epoch (see `exps/vg/results.json`).
-The GRU layers are named `rnn0` to `rnn3`.
-See `python -m scripts.extract_activations --help` for more options.
+## 2) Cluster with K-means from the VG representations
 
-### Computing ABX scores
+Similarly, we first extract CPC+VG representations of librispeech 100h : 
 
-As explained in previous section, you will first need to extract activations for the zerospeech2021 dataset using the script `scripts/extract_activations.py`.
+ ```bash
+python -m scripts.extract_activations exps/vg/cpc-small-vg-spokencoco/net.best.pt \
+  ~/corpora/librispeech/train-clean-100 \
+  data/activations/cpc-small-vg-spokencoco/librispeech/train-clean-100 \
+  --batch_size 8 --layer rnn0 --output_file_extension '.pt' \
+  --file_extension '.flac' --recursionLevel 2 --audio_features_fn 'cpc_small.pt' \
+  --cpc_model_path ~/zr2021vg_baseline/zr2021_models/checkpoints/CPC-small-kmeans50/cpc_ls100/checkpoint_170.pt
+```
+
+The first parameter is the path to the VG model whose representations need to be extracted.\
+The second parameter is the path to the librispeech 100h set of audio files.\
+The third parameter is the output folder where representations will be extracted.\
+This script will first extract CPC representations. Then it will feed the latter to the VG model whose representations of the first recurrent layer will be extracted.
+We then train the K-means model :
 
 ```bash
-python -m script.extract_activations exps/vg/<net.best.pt> ~/corpora/zerospeech2021/phonetic/dev-clean/ data/activations/zerospeech2021 \
-  --batch_size 8 --layer rnn0 \
-  --output_file_extension '.pt' --file_extension '.wav'
+python -m scripts.clustering data/activations/cpc-small-vg-spokencoco/librispeech/train-clean-100 \
+  exps/kmeans/cpc-small-vg-spokencoco-rnn0_kmeans-librispeech100-50 \
+  --nClusters 50 --MAX_ITER 150 --batchSizeGPU 500 --recursionLevel 2 --save
 ```
 
-There are then two main ways to compute the ABX scores:
+## 3) Train the language model
 
-* using the [utility scripts from ZeroSpeech 2021](https://github.com/bootphon/zerospeech2021) to validate and evaluate a submission.
+We must extract CPC+VG representations of `~/corpora/librispeech/{train-full-960,dev-clean,test-clean}`. We can do so by typing :
 
 ```bash
-zerospeech2021-validate ~/corpora/zerospeech2021 data/submission/vg-rnn0 --no-lexical --no-syntactic --no-semantic --only-dev
-zerospeech2021-evaluate ~/corpora/zerospeech2021 data/submission/vg-rnn0 --no-lexical --no-syntactic --no-semantic --force-cpu -o results/zerospeech2021/rnn0
+# train-full-960
+python -m scripts.extract_activations exps/vg/cpc-small-vg-spokencoco/net.best.pt \
+  ~/corpora/librispeech/train-full-960 \
+  data/activations/cpc-small-vg-spokencoco/librispeech/train-full-960 \
+  --batch_size 8 --layer rnn0 --output_file_extension '.pt' \
+  --file_extension '.flac' --recursionLevel 2 --audio_features_fn 'cpc_small.pt' \
+  --cpc_model_path ~/zr2021vg_baseline/zr2021_models/checkpoints/CPC-small-kmeans50/cpc_ls100/checkpoint_170.pt
+# dev-clean
+python -m scripts.extract_activations exps/vg/cpc-small-vg-spokencoco/net.best.pt \
+  ~/corpora/librispeech/dev-clean \
+  data/activations/cpc-small-vg-spokencoco/librispeech/dev-clean \
+  --batch_size 8 --layer rnn0 --output_file_extension '.pt' \
+  --file_extension '.flac' --recursionLevel 2 --audio_features_fn 'cpc_small.pt' \
+  --cpc_model_path ~/zr2021vg_baseline/zr2021_models/checkpoints/CPC-small-kmeans50/cpc_ls100/checkpoint_170.pt
+# test-clean
+python -m scripts.extract_activations exps/vg/cpc-small-vg-spokencoco/net.best.pt \
+  ~/corpora/librispeech/test-clean \
+  data/activations/cpc-small-vg-spokencoco/librispeech/test-clean \
+  --batch_size 8 --layer rnn0 --output_file_extension '.pt' \
+  --file_extension '.flac' --recursionLevel 2 --audio_features_fn 'cpc_small.pt' \
+  --cpc_model_path ~/zr2021vg_baseline/zr2021_models/checkpoints/CPC-small-kmeans50/cpc_ls100/checkpoint_170.pt
 ```
 
-* using [libri-light's evaluation script](https://github.com/facebookresearch/libri-light/tree/master/eval).
+Once these representations are extracted, we can quantize them :
 
 ```bash
-python <path_to_libri-light_eval>/eval_ABX.py data/activations/zerospeech2021/rnn0/  ~/corpora/zerospeech2021/phonetic/dev-clean/dev-clean.item --file_extension '.pt' --out results/abx/rnn0 --feature_size 0.02 --distance_mode 'cosine'
+# train-full-960
+python -m scripts.quantize_activations exps/kmeans/cpc-small-vg-spokencoco-rnn0_kmeans-librispeech100-50 \
+  data/activations/cpc-small-vg-spokencoco/librispeech/train-full-960/rnn0 \
+  data/quantized/cpc-small-vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-full-960
+# dev-clean
+python -m scripts.quantize_activations exps/kmeans/cpc-small-vg-spokencoco-rnn0_kmeans-librispeech100-50 \
+  data/activations/cpc-small-vg-spokencoco/librispeech/dev-clean/rnn0 \
+  data/quantized/cpc-small-vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/dev-clean
+# test-clean
+python -m scripts.quantize_activations exps/kmeans/cpc-small-vg-spokencoco-rnn0_kmeans-librispeech100-50 \
+  data/activations/cpc-small-vg-spokencoco/librispeech/test-clean/rnn0 \
+  data/quantized/cpc-small-vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/test-clean
 ```
 
-### Training clustering
+The first parameter of `python -m scripts.quantize_activations` is the path to the folder containing the K-means model.\
+The second parameter is the path to input representations : the ones that have been extracted from CPC+VG.\
+The third parameter is the path to the output representations : the quantized ones.
 
-To train the k-means clustering on Flickr8K train set, first extract activations as explained [above](#extracting-activations) and then run:
+Next step is to convert the quantized representations to the format needed by fairseq
 
 ```bash
-python clustering.py --recursionLevel 0 --nClusters 50 --MAX_ITER 150 --save --batchSizeGPU 500 data/activations/flickr8k/train/rnn0 exps/kmeans/flickr8k/rnn0
+# Fairseq format conversion
+python -m scripts.convert_for_fairseq \
+    data/quantized/cpc-small-vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-960/quantized_outputs.txt \
+    data/quantized/cpc-small-vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-960/fairseq.txt
+python -m scripts.convert_for_fairseq \
+    data/quantized/cpc-small-vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/dev-clean/quantized_outputs.txt \
+    data/quantized/cpc-small-vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/dev-clean/fairseq.txt
+python -m scripts.convert_for_fairseq \
+    data/quantized/cpc-small-vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/test-clean/quantized_outputs.txt \
+    data/quantized/cpc-small-vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/test-clean/fairseq.txt
+# Preprocessing
+fairseq.preprocess --only-source \
+    --trainpref data/quantized/cpc-small-vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-960/fairseq.txt \
+    --validpref data/quantized/cpc-small-vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/dev-clean/fairseq.txt \
+    --testpref data/quantized/cpc-small-vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/test-clean/fairseq.txt \
+    --destdir data/fairseq-bin-data/cpc-small-vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-960 \
+    --workers 20
 ```
 
-To train the k-means clustering on LibriSpeech train-clean-100 set, run:
+We can finally train the language model. There exist 3 versions of the LM. We'll go through each of them.
+
+1) LSTM
 
 ```bash
-python -m scripts.extract_activations exps/vgslu/net.best.pt ~/corpora/LibriSpeech/train-clean-100 data/activations/librispeech/train-clean-100 --batch_size 8 --layer rnn0 --output_file_extension '.pt' --file_extension '.flac'
-python clustering.py --recursionLevel 1 --nClusters 50 --MAX_ITER 150 --save --batchSizeGPU 500 data/activations/librispeech/train-clean-100/rnn0 exps/kmeans/librispeech/rnn0
+fairseq-train --fp16 \
+    data/fairseq-bin-data/cpc-small-vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-960 \
+    --task language_modeling \
+    --save-dir exps/lm/cpc-small-vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-lstm-librispeech100 \
+    --keep-last-epochs 2 \
+    --tensorboard-logdir tensorboard \
+    --arch lstm_lm \
+    --decoder-embed-dim 200 \
+    --decoder-hidden-size 1024 \
+    --decoder-layers 3 \
+    --decoder-out-embed-dim 200 \
+    --optimizer adam \
+    --adam-betas '(0.9, 0.98)' \
+    --clip-norm 0.0 \
+    --lr-scheduler inverse_sqrt \
+    --lr 0.0005 \
+    --warmup-updates 1000 \
+    --warmup-init-lr 1e-07 \
+    --dropout 0.1 \
+    --weight-decay 0.01 \
+    --sample-break-mode none \
+    --tokens-per-sample 2048 \
+    --max-tokens 131072 \
+    --update-freq 1 \
+    --max-update 100000
 ```
 
-## Instructions for VG model trained from CPC representations
-
-First, let's get the baseline of ZeroSpeech 2021 :
+2) BERT base :
 
 ```bash
-mkdir zr2021_models && cd zr2021_models
-curl https://download.zerospeech.com/2021/baseline_checkpoints.tar.gz | tar xz
-echo "{}" > checkpoints/CPC-small-kmeans50/cpc_ls100/checkpoint_logs.json
-echo "{}" > checkpoints/CPC-big-kmeans50/cpc_ll6k/checkpoint_logs.json
-
-cd ..
+SPAN_SIZE = 5 # equivalent to 100 ms
+MAX_TOKENS = 4096
+fairseq-train --fp16 \
+  data/fairseq-bin-data/cpc-small-vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-960 \
+  --save-dir exps/lm/cpc-small-vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-bert_small-librispeech100 \
+  --task masked_lm \
+  --keep-last-epochs 1 \
+  --tensorboard-logdir tensorboard \
+  --train-subset train \
+  --num-workers 4 \
+  --criterion masked_lm \
+  --arch roberta_base \
+  --sample-break-mode eos --tokens-per-sample 3072 --max-positions 6144 \
+  --optimizer adam --adam-betas '(0.9, 0.98)' --adam-eps 1e-06 --clip-norm 0.0 \
+  --lr-scheduler polynomial_decay --lr 0.0005 --total-num-update 250000 --warmup-updates 10000 \
+  --dropout 0.1 --attention-dropout 0.1 --weight-decay 0.01 \
+  --mask-multiple-length $SPAN_SIZE --mask-prob 0.5 --mask-stdev $SPAN_SIZE \
+  --max-tokens $MAX_TOKENS --max-update 5000000 --encoder-embed-dim 512 --encoder-ffn-embed-dim 2048 --encoder-attention-heads 8 --encoder-layers 8 \
+  --seed 5 --log-format simple --log-interval 10 --skip-invalid-size-inputs-valid-test
 ```
 
-This folder contains pretrained CPC models from which the representations will be extracted.
-We can now extract audio and visual features by typing : 
+3) BERT large (16 to 32 GPUs needed) :
 
 ```bash
-python -m platalea.utils.preprocessing flickr8k --flicrk8k_root ~/corpora/flickr8k \
-  --cpc_model_path zr2021_models/checkpoints/CPC-small-kmeans50/cpc_ls100/checkpoint_170.pt \
-  --audio_features_fn cpc_small.pt
+SPAN_SIZE=5 # equivalent to 100 ms
+MAX_TOKENS=4096
+GPU_PER_TASK=8
+CPU_PER_TASK=64
+TASKS_PER_NODE=1
+NODES=4
+TOTAL_GPU=$((GPU_PER_TASK * TASKS_PER_NODE * NODES))
+DISTRIBUTED_PORT=52663 
+UPDATE_FREQ=$((128 / TOTAL_GPU))
+
+fairseq-train --fp16 data/fairseq-bin-data/cpc-small-vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-960 \
+  --save-dir exps/lm/cpc-small-vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-bert_large-librispeech100 \
+  --task masked_lm \
+  --keep-last-epochs 1 \
+  --tensorboard-logdir tensorboard \
+  --train-subset train \
+  --num-workers 4 \
+  --criterion masked_lm \
+  --arch roberta_base \
+  --sample-break-mode eos --tokens-per-sample 3072 --max-positions 6144 \
+  --optimizer adam --adam-betas '(0.9, 0.98)' --adam-eps 1e-06 --clip-norm 0.0 \
+  --lr-scheduler polynomial_decay --lr 0.0005 --total-num-update 250000 --warmup-updates 10000 \
+  --dropout 0.1 --attention-dropout 0.1 --weight-decay 0.01 \
+  --mask-multiple-length $SPAN_SIZE --mask-prob 0.5 --mask-stdev $SPAN_SIZE \
+  --max-tokens $MAX_TOKENS --max-update 250000 \
+  --seed 5 --log-format simple --log-interval 10 --skip-invalid-size-inputs-valid-test \
+  --distributed-world-size $TOTAL_GPU --distributed-port $DISTRIBUTED_PORT
 ```
-
-Similary, you can choose to train from CPC representations by typing :
-
-```bash
-python -m platalea.utils.preprocessing flickr8k --flicrk8k_root ~/corpora/flickr8k \
-  --cpc_model_path zr2021_models/checkpoints/CPC-big-kmeans50/cpc_ll6k/checkpoint_32.pt \
-  --audio_features_fn cpc_big_2nd_layer.pt --cpc_gru_level 2
-```
-
-And train the visually ground model :
-
-```bash
-mkdir -p exps/cpc_vg
-cd exps/cpc_vg
-cp ../../scripts/train_cpc_vg.py .
-python train_cpc_vg.py flickr8k --flickr8k_root ~/corpora/flickr8k
-```
-
-## Instructions for training CPC (comparison with the audio-only baseline)
-
-### Data Preparation
-
-Please download [Flickr Audio](https://groups.csail.mit.edu/sls/downloads/flickraudio/) and [SpokenCOCO](https://groups.csail.mit.edu/sls/downloads/placesaudio/index.cgi).
-Once the corpora have been downloaded, you can run the python scripts to convert the original format to the format needed by CPC.
-
-```bash
-python utils/spoken_coco_to_cpc_format.py --audio /path/to/SpokenCOCO/wavs \
-  --output /path/to/SpokenCOCO_CPC
-
-python utils/flickr_audio_to_cpc_format.py --flickr_audio /path/to/FLICKR8K/flickr_audio/wavs \
-  --flickr_wav2spkr /path/to/FLICKR8K/wav2spk.txt \
-  --output /path/to/FLICKR_CPC
-```
-
-Original files won't be modified. The scripts will create symbolic links with the following structure :
-
-```bash
-PATH_AUDIO_FILES
-│
-└───speaker1
-│        │   seq_11.wav
-│        │   seq_12.wav
-│        │   ...
-│
-└───speaker2
-        │   seq_21.wav
-        │   seq_22.wav
-```
-
-### CPC training
-
-To train the CPC model, follow the instructions at https://github.com/facebookresearch/CPC_audio.
-
-Example command:
-
-```bash
-python /path/to/CPC_audio/cpc/train.py \
-    --pathDB /path/to/SpokenCOCO_CPC \
-    --pathCheckpoint /path/to/checkpoints/CPC_small_SpokenCOCO \
-    --file_extension .wav --nLevelsGRU 2
-```
-
-## References
-
-[1] Nguyen, T. A., de Seyssel, M., Rozé, P., Rivière, M., Kharitonov, E., Baevski, A., Dunbar, E., & Dupoux, E. (2020). The Zero Resource Speech Benchmark 2021: Metrics and baselines for unsupervised spoken language modeling. http://arxiv.org/abs/2011.11588
-
-[2] Chrupała, G. (2019). Symbolic Inductive Bias for Visually Grounded Learning of Spoken Language. Proceedings of the 57th Annual Meeting of the Association for Computational Linguistics, 6452–6462. https://doi.org/10.18653/v1/P19-1647
-
-[3] Higy, B., Elliott, D., & Chrupała, G. (2020). Textual Supervision for Visually Grounded Spoken Language Understanding. Findings of the Association for Computational Linguistics: EMNLP 2020, 2698–2709. https://doi.org/10.18653/v1/2020.findings-emnlp.244
-
-[4] Hsu, W.-N., Harwath, D., Song, C., & Glass, J. (2020). Text-Free Image-to-Speech Synthesis Using Learned Segmental Units. http://arxiv.org/abs/2012.15454
-
