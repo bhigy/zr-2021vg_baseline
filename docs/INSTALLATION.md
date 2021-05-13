@@ -2,7 +2,7 @@ Dependencies can be installed using following commands:
 
 ```bash
 conda create --name zrvg python=3.8 && conda activate zrvg
-python -m pip install -r requirements.txt
+xargs -L 1 pip install < requirements.txt  # Forces to install packages in order
 ```
 
 This step will install 4 main repositories : 
