@@ -74,8 +74,7 @@ def parseArgs(argv):
     return parser.parse_args(argv)
 
 
-def compute_audio_features(audio_fpaths, max_size_seq, _audio_feat_config):
-    audio_config = _audio_feat_config
+def compute_audio_features(audio_fpaths, max_size_seq, audio_config):
     audio_config['max_size_seq'] = max_size_seq
     return audio_features(audio_fpaths, audio_config)
 
@@ -154,13 +153,13 @@ def main(pathCheckpoint, pathDB, pathOutputDir, batch_size=8, debug=False,
         else:
             print('No cached features. Computing them from scratch.')
             audio_fpaths = [pathDB / s[1] for s in seqNames]
-            features = compute_audio_features(audio_fpaths, max_size_seq)
+            features = compute_audio_features(audio_fpaths, max_size_seq, _audio_feat_config)
             print(f'Caching features ({cache_fpath}).')
             torch.save(features, cache_fpath)
     else:
         print('Computing features.')
         audio_fpaths = [pathDB / s[1] for s in seqNames]
-        features = compute_audio_features(audio_fpaths, max_size_seq)
+        features = compute_audio_features(audio_fpaths, max_size_seq, _audio_feat_config)
 
     # Load VG model
     print("")
