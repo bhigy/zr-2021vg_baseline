@@ -1,89 +1,149 @@
-## Instructions for running the baselines
+## Description of the baseline
 
-The baselines are based on the baselines for the [Zerospeech 2021 challenge](https://github.com/bootphon/zerospeech2021_baseline) [[1]](README.md#reference), with the CPC-based acoustic model replaced by or complemented with a visually-grounded (VG) model similar to the *speech-image* model described in [[2-3]](README.md#references).
+Similarly to the baselines for the [ZeroSpeech 2021 challenge - audio-only track](https://github.com/bootphon/zerospeech2021_baseline) [[1]](LOWBUDGET.md#references), the low-budget baseline is mainly composed of two main elements:
+* A visually-grounded (VG) model which replaces the CPC-based acoustic model of the audio-only baselines. This model is similar to the *speech-image* model described in [[2-3]](LOWBUDGET.md#references).
+* A language model (LM) which is trained on activations extracted from the VG model and quantized through K-means clustering. We re-use here BERT-small which was introduced in the audio-only track.
 
-### Training and evaluation
+## Pretrained models
 
-The two baselines are complex pipelines. Training and evaluating them requires to follow many steps in a specific order, alternating the training of the different components with the extraction of the information necessary for each step. To simplify the reproduction of our results, we provide two scripts, `run_lowbudget.py` and `run_highbudget.py`, that can take care of the complete process automatically.
+Pretrained models can be downloaded from [the ZeroSpeech challenge website](https://download.zerospeech.com). Simply unzip the archive under the repository root directory.
 
-More details about the different options they provide can be obtained using the parameter `-h`. We also provide more details on the different steps [below](README.md#steps).
+## Training procedure
 
-Finally, pretrained models can be found [here](https://download.zerospeech.com). Simply unzip the archive under the repository root directory. The scripts `run_lowbudget.py` and `run_highbudget.py` will automatically detect the presence of a model's checkpoint and skip the training of that component.
+If alternatively you want to retrain the baseline from scratch, you will need to go through following steps. We assume that you already have the datasets stored under `~/corpora` (otherwise, you will first need to follow the instructions provided [here](DATASETS.md).
 
-## Steps
-
-We present now in more details the different steps necessary to train the full baseline systems and evaluate them.
-
-* **train_vg.py**: trains the VG model.
+### Training the VG model.
 
 ```bash
-python -m scripts.train_vg spokencoco
+mkdir -p exps/vg/vg-spokencoco
+cd exps/vg/vg-spokencoco
+python -m scripts.train_vg spokencoco --epochs 12 --spokencoco_root ~/corpora/spokencoco
+python -m platalea.utils.copy_best
+cd ../../..
 ```
 
-### Training of the VG model
+After running these commands, the folder `exps/vg/vg-spokencoco` should contain, among other files:
+* `result.json`, which contains the performance of the model after each epoch.
+* `net.best.pt`, corresponding to the best checkpoint of the model (according to the R@10 metric).
 
-The VG model can be trained by running:
+### Training K-means clustering
 
-```bash
-mkdir -p exps/vg
-cd exps/vg
-cp ../../scripts/train_vg.py .
-python train_vg.py flickr8k --flickr8k_root ~/corpora/flickr8k
-```
+We train K-means clustering on LibriSpeech-100, using the activations of the first recurrent layer of the VG model.
+We use 50 clusters.
 
-### Extracting activations
+#### Extracting activations
 
-In order to compute the ABX score or train the k-means clustering, the activations of one of the GRU layers need to be extracted.
-This can be done with the script `scripts/extract_activations.py`; e.g., for the first GRU layer (`rnn0`), run:
+To extract the relevant activations run (the GRU layers are named `rnn0` to `rnn3`):
 
 ```bash
-python -m extract_activations exps/vgslu/<net.best.pt> ~/corpora/flickr8k/flickr_audio/wavs data/activations/flickr8k/train \
+python -m scripts.extract_activations exps/vg/vg-spokencoco/net.best.pt \
+    ~/corpora/LibriSpeech/train-clean-100 \
+    data/activations/vg-spokencoco/librispeech/train-clean-100 \
     --batch_size 8 --layer rnn0 --output_file_extension '.pt' \
-    --seqList data/datasets/flicrk8k/flickr8k_train.txt --recursionLevel 0
+    --file_extension '.flac' --recursionLevel 2
 ```
 
-Where net.best.pt should be replaced with the checkpoint corresponding to the best epoch (see `exps/vg/results.json`).
-The GRU layers are named `rnn0` to `rnn3`.
-See `python -m scripts.extract_activations --help` for more options.
+#### Training the model
 
-### Computing ABX scores
-
-As explained in previous section, you will first need to extract activations for the zerospeech2021 dataset using the script `scripts/extract_activations.py`.
+We can now train K-means clustering:
 
 ```bash
-python -m script.extract_activations exps/vg/<net.best.pt> ~/corpora/zerospeech2021/phonetic/dev-clean/ data/activations/zerospeech2021 \
-  --batch_size 8 --layer rnn0 \
-  --output_file_extension '.pt' --file_extension '.wav'
+python -m scripts.clustering data/activations/vg-spokencoco/librispeech/train-clean-100 \
+    exps/kmeans/vg-spokencoco-rnn0_kmeans-librispeech100-50 \
+    --nClusters 50 --MAX_ITER 150 --batchSizeGPU 500 --recursionLevel 2 --save
 ```
 
-There are then two main ways to compute the ABX scores:
+### Training the language model
 
-* using the [utility scripts from ZeroSpeech 2021](https://github.com/bootphon/zerospeech2021) to validate and evaluate a submission.
+We finally need to train the BERT-small language model on LibriSpeech 960.
+To do that, we need to extract activations for LibriSpeech and quantize them using K-means.
+
+#### Extracting activations
 
 ```bash
-zerospeech2021-validate ~/corpora/zerospeech2021 data/submission/vg-rnn0 --no-lexical --no-syntactic --no-semantic --only-dev
-zerospeech2021-evaluate ~/corpora/zerospeech2021 data/submission/vg-rnn0 --no-lexical --no-syntactic --no-semantic --force-cpu -o results/zerospeech2021/rnn0
+python -m scripts.extract_activations exps/vg/vg-spokencoco/net.best.pt \
+    ~/corpora/LibriSpeech/train-960 \
+    data/activations/vg-spokencoco/librispeech/train-960 \
+    --batch_size 8 --layer rnn0 --output_file_extension '.pt' \
+    --file_extension '.flac' --recursionLevel 2
+python -m scripts.extract_activations exps/vg/vg-spokencoco/net.best.pt \
+    ~/corpora/LibriSpeech/dev-clean \
+    data/activations/vg-spokencoco/librispeech/dev-clean \
+    --batch_size 8 --layer rnn0 --output_file_extension '.pt' \
+    --file_extension '.flac' --recursionLevel 2
+python -m scripts.extract_activations exps/vg/vg-spokencoco/net.best.pt \
+    ~/corpora/LibriSpeech/test-clean \
+    data/activations/vg-spokencoco/librispeech/test-clean \
+    --batch_size 8 --layer rnn0 --output_file_extension '.pt' \
+    --file_extension '.flac' --recursionLevel 2
 ```
 
-* using [libri-light's evaluation script](https://github.com/facebookresearch/libri-light/tree/master/eval).
+#### Quantizing the activations
 
-```bash
-python <path_to_libri-light_eval>/eval_ABX.py data/activations/zerospeech2021/rnn0/  ~/corpora/zerospeech2021/phonetic/dev-clean/dev-clean.item --file_extension '.pt' --out results/abx/rnn0 --feature_size 0.02 --distance_mode 'cosine'
+``` bash
+python -m scripts.quantize_activations exps/kmeans/vg-spokencoco-rnn0_kmeans-librispeech100-50 \
+    data/activations/vg-spokencoco/librispeech/train-960/rnn0 \
+    data/quantized/vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-960 \
+    --recursionLevel 2
+python -m scripts.quantize_activations exps/kmeans/vg-spokencoco-rnn0_kmeans-librispeech100-50 \
+    data/activations/vg-spokencoco/librispeech/dev-clean/rnn0 \
+    data/quantized/vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/dev-clean \
+    --recursionLevel 2
+python -m scripts.quantize_activations exps/kmeans/vg-spokencoco-rnn0_kmeans-librispeech100-50 \
+    data/activations/vg-spokencoco/librispeech/test-clean/rnn0 \
+    data/quantized/vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/test-clean \
+    --recursionLevel 2
 ```
 
-### Training clustering
+#### Training the model
 
-To train the k-means clustering on Flickr8K train set, first extract activations as explained [above](#extracting-activations) and then run:
+We can now train the model:
+``` bash
+# Converting quantized output for fairseq
+python -m scripts.convert_for_fairseq \
+    data/quantized/vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-960/quantized_outputs.txt \
+    data/quantized/vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-960/fairseq.txt
+python -m scripts.convert_for_fairseq \
+    data/quantized/vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/dev-clean/quantized_outputs.txt \
+    data/quantized/vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/dev-clean/fairseq.txt
+python -m scripts.convert_for_fairseq \
+    data/quantized/vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/test-clean/quantized_outputs.txt \
+    data/quantized/vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/test-clean/fairseq.txt
 
-```bash
-python clustering.py --recursionLevel 0 --nClusters 50 --MAX_ITER 150 --save --batchSizeGPU 500 data/activations/flickr8k/train/rnn0 exps/kmeans/flickr8k/rnn0
-```
+# Preprocessing of the data
+fairseq.preprocess --only-source \
+    --trainpref data/quantized/vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-960/fairseq.txt \
+    --validpref data/quantized/vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/dev-clean/fairseq.txt \
+    --testpref data/quantized/vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/test-clean/fairseq.txt \
+    --destdir data/fairseq-bin-data/vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-960 \
+    --workers 20
 
-To train the k-means clustering on LibriSpeech train-clean-100 set, run:
-
-```bash
-python -m scripts.extract_activations exps/vgslu/net.best.pt ~/corpora/LibriSpeech/train-clean-100 data/activations/librispeech/train-clean-100 --batch_size 8 --layer rnn0 --output_file_extension '.pt' --file_extension '.flac'
-python clustering.py --recursionLevel 1 --nClusters 50 --MAX_ITER 150 --save --batchSizeGPU 500 data/activations/librispeech/train-clean-100/rnn0 exps/kmeans/librispeech/rnn0
+# Training
+fairseq-train --fp16 \
+    data/fairseq-bin-data/vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-960 \
+    --task language_modeling \
+    --save-dir exps/lm/vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-lstm-librispeech100 \
+    --keep-last-epochs 2 \
+    --tensorboard-logdir tensorboard \
+    --arch lstm_lm \
+    --decoder-embed-dim 200 \
+    --decoder-hidden-size 1024 \
+    --decoder-layers 3 \
+    --decoder-out-embed-dim 200 \
+    --optimizer adam \
+    --adam-betas '(0.9, 0.98)' \
+    --clip-norm 0.0 \
+    --lr-scheduler inverse_sqrt \
+    --lr 0.0005 \
+    --warmup-updates 1000 \
+    --warmup-init-lr 1e-07 \
+    --dropout 0.1 \
+    --weight-decay 0.01 \
+    --sample-break-mode none \
+    --tokens-per-sample 2048 \
+    --max-tokens 131072 \
+    --update-freq 1 \
+    --max-update 100000
 ```
 
 ## References
@@ -93,5 +153,3 @@ python clustering.py --recursionLevel 1 --nClusters 50 --MAX_ITER 150 --save --b
 [2] Chrupała, G. (2019). Symbolic Inductive Bias for Visually Grounded Learning of Spoken Language. Proceedings of the 57th Annual Meeting of the Association for Computational Linguistics, 6452–6462. https://doi.org/10.18653/v1/P19-1647
 
 [3] Higy, B., Elliott, D., & Chrupała, G. (2020). Textual Supervision for Visually Grounded Spoken Language Understanding. Findings of the Association for Computational Linguistics: EMNLP 2020, 2698–2709. https://doi.org/10.18653/v1/2020.findings-emnlp.244
-
-[4] Hsu, W.-N., Harwath, D., Song, C., & Glass, J. (2020). Text-Free Image-to-Speech Synthesis Using Learned Segmental Units. http://arxiv.org/abs/2012.15454

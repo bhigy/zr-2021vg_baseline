@@ -4,14 +4,14 @@ This repository contains the code to run the baselines for the Zero-Resource Spe
 
 ## Overview of the baselines
 
-Our baseline is directly inspired by the audio-only baseline used in the [Zerospeech 2021 challenge](https://github.com/bootphon/zerospeech2021_baseline). 
-The main difference is that we use a visually grounded (VG) model to learn our speech representations. Then, the latter are fed to K-means and the language model.
-The low-budget baseline replaces the contrastive predictive model (CPC) with a VG model. While the high-budget baseline adds the VG model on top of the CPC model.
+Our baselines are directly inspired by the audio-only baselines used in the [Zerospeech 2021 challenge](https://github.com/bootphon/zerospeech2021_baseline).
+The main difference is that we incorporate a visually grounded (VG) model to learn our speech representations. Those representations are then fed to the language model through K-means clustering.
+The low-budget baseline completely replaces the contrastive predictive model (CPC) with the VG model. The high-budget baseline, on the other hand, adds the VG model on top of the CPC model.
 
 | Step | Low-budget baseline | High-budget baseline |
 ---|---|---
 | Input | MFCCs | Waveform |
-| Acoustic model (training set) | VG model | CPC-small + VG model |
+| Acoustic model | VG model | CPC-small + VG model |
 | Quantization | K-means | K-means |
 | Language Model | LSTM | BERT large |
 
@@ -31,7 +31,7 @@ If you want to gain knowledge about the approach adopted in the ZeroSpeech 2021 
 
 [1] **Description of the challenge in :** Nguyen, T. A., de Seyssel, M., Rozé, P., Rivière, M., Kharitonov, E., Baevski, A., Dunbar, E., & Dupoux, E. (2020). The Zero Resource Speech Benchmark 2021: Metrics and baselines for unsupervised spoken language modeling. http://arxiv.org/abs/2011.11588
 
-[2] **Website of the challenge :** https://zerospeech.com/2021/news.html 
+[2] **Website of the challenge :** https://zerospeech.com/2021/news.html
 
 [3] **Description (1st) of the visually grounded models in :** Chrupała, G. (2019). Symbolic Inductive Bias for Visually Grounded Learning of Spoken Language. Proceedings of the 57th Annual Meeting of the Association for Computational Linguistics, 6452–6462. https://doi.org/10.18653/v1/P19-1647
 
