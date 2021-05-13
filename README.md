@@ -12,7 +12,9 @@ The baselines are based on the baselines for the [Zerospeech 2021 challenge](htt
 ---|---|---
 | Input | MFCCs | Waveform |
 | Acooustic model (training set) | VG model (SpokenCOCO) | CPC-small (LibriSpeech-960) + <br> VG model (SpokenCOCO)|
+| Layer used to extract features | 1st recurrent layer (rnn0) | 1st recurrent layer (rnn0) |
 | Quantization | k-means (LibriSpeech-100) | k-means (LibriSpeech-100) |
+| Language Model | LSTM (LibriSpeech-960) | BERT (LibriSpeech-100) |
 
 
 ## References
@@ -22,6 +24,3 @@ The baselines are based on the baselines for the [Zerospeech 2021 challenge](htt
 [2] Chrupała, G. (2019). Symbolic Inductive Bias for Visually Grounded Learning of Spoken Language. Proceedings of the 57th Annual Meeting of the Association for Computational Linguistics, 6452–6462. https://doi.org/10.18653/v1/P19-1647
 
 [3] Higy, B., Elliott, D., & Chrupała, G. (2020). Textual Supervision for Visually Grounded Spoken Language Understanding. Findings of the Association for Computational Linguistics: EMNLP 2020, 2698–2709. https://doi.org/10.18653/v1/2020.findings-emnlp.244
-
-[4] Hsu, W.-N., Harwath, D., Song, C., & Glass, J. (2020). Text-Free Image-to-Speech Synthesis Using Learned Segmental Units. http://arxiv.org/abs/2012.15454
-
