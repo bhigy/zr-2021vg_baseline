@@ -2,16 +2,6 @@
 
 This repository contains the code to run the baselines for the Zero-Resource Speech Challenge using Visually-Grounded Models of Spoken Language, 2021 edition.
 
-
-## Installation
-
-The package can be installed using following commands:
-
-```bash
-conda create --name zrvg python=3.8 & conda activate zrvg
-python -m pip install -r requirements.txt
-```
-
 ## Description of the baselines
 
 ## Overview of the baselines
