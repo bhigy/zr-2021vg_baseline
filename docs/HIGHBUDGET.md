@@ -8,13 +8,13 @@ mkdir zr2021_models
 curl https://download.zerospeech.com/2021/baseline_checkpoints.tar.gz | tar xz zr2021_models
 ```
 
-We'll assume that these checkpoints are stored under `~/zr2021vg_baseline/baseline_checkpoints`.
+We'll assume that these checkpoints are stored under `~/zr2021vg_baseline/zr2021_models`.
 At this point, if you have followed the instructions in the [Datasets](./docs/DATASETS.md) instructions, you should have all the required datasets and models under :
 
 * `~/corpora/spokencoco`
 * `~/corpora/librispeech`
 * `~/corpora/zerospeech2021`
-* `~/zr2021vg_baseline/audio_only_checkpoints`
+* `~/zr2021vg_baseline/zr2021_models`
 
 Let's warm up the GPUs then !
 
