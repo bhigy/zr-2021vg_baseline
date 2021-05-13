@@ -12,9 +12,8 @@ The low-budget baseline replaces the contrastive predictive model (CPC) with a V
 ---|---|---
 | Input | MFCCs | Waveform |
 | Acoustic model (training set) | VG model | CPC-small + VG model |
-| Layer used to extract features | 1st recurrent layer | 1st recurrent layer |
-| Quantization | k-means | k-means |
-| Language Model | LSTM | BERT |
+| Quantization | K-means | K-means |
+| Language Model | LSTM | BERT large |
 
 ## How to use ?
 
