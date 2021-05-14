@@ -172,7 +172,7 @@ SPAN_SIZE = 5 # equivalent to 100 ms
 MAX_TOKENS = 4096
 fairseq-train --fp16 \
   data/fairseq-bin-data/cpc_small_vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-full-960 \
-  --save-dir exps/lm/cpc_small_vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-bert_small-librispeech960\
+  --save-dir exps/lm/cpc_small_vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-bert-small-librispeech960\
   --task masked_lm \
   --keep-last-epochs 1 \
   --tensorboard-logdir tensorboard \
@@ -203,7 +203,7 @@ DISTRIBUTED_PORT=52663
 UPDATE_FREQ=$((128 / TOTAL_GPU))
 
 fairseq-train --fp16 data/fairseq-bin-data/cpc_small_vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-full-960 \
-  --save-dir exps/lm/cpc_small_vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-bert_large-librispeech960 \
+  --save-dir exps/lm/cpc_small_vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-bert-large-librispeech960 \
   --task masked_lm \
   --keep-last-epochs 1 \
   --tensorboard-logdir tensorboard \
@@ -220,3 +220,5 @@ fairseq-train --fp16 data/fairseq-bin-data/cpc_small_vg-spokencoco-rnn0_kmeans-l
   --seed 5 --log-format simple --log-interval 10 --skip-invalid-size-inputs-valid-test \
   --distributed-world-size $TOTAL_GPU --distributed-port $DISTRIBUTED_PORT
 ```
+
+Please note that if using LSTM or BERT small, the model will be classified as "low-budget". Whereas, it will be classified as "high-budget" if using BERT large.
