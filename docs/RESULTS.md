@@ -13,23 +13,23 @@ Lower is better.
   <tr>
     <td></td>
     <td></td>
-    <td colspan="4" align="center">LibriSpeech dev</td>
+    <td colspan="4" align="center" style="font-weight:bold">LibriSpeech dev</td>
   </tr>
 
   <tr>
     <td></td>
     <td></td>
-    <td colspan="2" align="center">dev-clean</td>
-    <td colspan="2" align="center">dev-other</td>
+    <td colspan="2" align="center" style="font-weight:bold">dev-clean</td>
+    <td colspan="2" align="center" style="font-weight:bold">dev-other</td>
   </tr>
 
   <tr>
-    <td>Model</td>
-    <td>Layer</td>
-    <td>within</td>
-    <td>across</td>
-    <td>within</td>
-    <td>across</td>
+    <td style="font-weight:bold">Model</td>
+    <td style="font-weight:bold">Layer</td>
+    <td style="font-weight:bold">within</td>
+    <td style="font-weight:bold">across</td>
+    <td style="font-weight:bold">within</td>
+    <td style="font-weight:bold">across</td>
   </tr>
 
   <tr>
@@ -51,6 +51,8 @@ Lower is better.
   </tr>
 </table>
 
+**Layer** refers to the layer used to extract representations. rnn1 corresponds to the second recurrent layer.
+
 # sSIMI : Semantic similarity with human judgments
 
 In this task, the model receives 2 words, let's say /abduct/ and /kidnap/. 
@@ -62,14 +64,14 @@ Higher is better.
   <tr>
     <td></td>
     <td></td>
-    <td colspan="2" align="center">sSIMI dev</td>
+    <td colspan="2" align="center" style="font-weight:bold">sSIMI dev</td>
   </tr>
 
   <tr>
-    <td>Model</td>
-    <td>Layer</td>
-    <td align="center">librispeech</td>
-    <td align="center">synthetic</td>
+    <td style="font-weight:bold">Model</td>
+    <td style="font-weight:bold">Layer</td>
+    <td align="center" style="font-weight:bold">librispeech</td>
+    <td align="center" style="font-weight:bold">synthetic</td>
   </tr>
 
   <tr>
@@ -87,6 +89,9 @@ Higher is better.
   </tr>
 </table>
 
+**Layer** refers to the layer used to extract representations. att corresponds to the attention layer.
+
+
 # sBLIMP : Syntax acceptability judgment
 
 In this task, the model receives two sentences, one of which is syntactically wrong. Let's say /dogs eat meat/ vs /dogs eats meat/.
@@ -96,11 +101,11 @@ Higher is better.
 
 <table>
   <tr>
-    <td>Model</td>
-    <td>K</td>
-    <td>M_d</td>
-    <td>Delta_t</td>
-    <td colspan="1" align="center">sBLIMP dev</td>
+    <td style="font-weight:bold">Model</td>
+    <td style="font-weight:bold">K</td>
+    <td style="font-weight:bold">M_d</td>
+    <td style="font-weight:bold">Delta_t</td>
+    <td colspan="1" align="center" style="font-weight:bold">sBLIMP dev</td>
   </tr>
 
 
@@ -121,6 +126,9 @@ Higher is better.
   </tr>
 </table>
 
+**K** refers to the number of clusters used in K-means.
+**M_d** and **Delta_t** are respectively the decoding span size and the temporal sliding size used to extract pseudo-probabilities
+
 # sWUGGY : Spot-the-word task
 
 In this task, the model receives a word and a non-word. Let's say /brick/ and /blick/.
@@ -132,11 +140,11 @@ Higher is better.
 
 <table>
   <tr>
-    <td>Model</td>
-    <td>K</td>
-    <td>M_d</td>
-    <td>Delta_t</td>
-    <td colspan="1" align="center">sWUGGY dev</td>
+    <td style="font-weight:bold">Model</td>
+    <td style="font-weight:bold">K</td>
+    <td style="font-weight:bold">M_d</td>
+    <td style="font-weight:bold">Delta_t</td>
+    <td colspan="1" align="center" style="font-weight:bold">sWUGGY dev</td>
   </tr>
 
 
@@ -156,6 +164,10 @@ Higher is better.
     <td>67.16</td>
   </tr>
 </table>
+
+**K** refers to the number of clusters used in K-means.
+**M_d** and **Delta_t** are respectively the decoding span size and the temporal sliding size used to extract pseudo-probabilities
+
 
 # Findings
 
