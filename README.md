@@ -19,8 +19,8 @@ The low-budget baseline completely replaces the contrastive predictive model (CP
 
 1) [Installation](./docs/INSTALLATION.md)
 2) [Datasets](./docs/DATASETS.md)
-3) [Low budget baseline : MFCCs + VG + KMEANS + LM](./docs/LOWBUDGET.md)
-4) [High budget baseline : CPC + VG + KMEANS + LM](./docs/HIGHBUDGET.md)
+3) [Low budget baseline : MFCCs + VG + KMEANS + LM](./docs/LOWBUDGET.md) (1 GPU)
+4) [High budget baseline : CPC + VG + KMEANS + LM](./docs/HIGHBUDGET.md) (1 to 32 GPUs)
 5) [Evaluation](./docs/EVALUATION.md)
 6) [Baselines' results](./docs/RESULTS.md)
 
