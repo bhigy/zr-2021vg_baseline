@@ -1,5 +1,5 @@
 Each of the 4 considered metrics are shallowly described at the beginning of each section. Please note that some approximations are made in favour of clarity.
-Please refer to the [Zero Resource Speech paper]((More details in the [ZR paper](https://arxiv.org/pdf/2011.11588.pdf))) for more details.
+Please refer to the [Zero Resource Speech paper](https://arxiv.org/pdf/2011.11588.pdf) for more details.
 
 
 # ABX error rate : Phoneme discriminability
