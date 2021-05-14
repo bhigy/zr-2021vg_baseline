@@ -116,8 +116,8 @@ Next step is to convert the quantized representations to the format needed by fa
 ```bash
 # Fairseq format conversion
 python -m scripts.convert_for_fairseq \
-    data/quantized/cpc-small-vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-960/quantized_outputs.txt \
-    data/quantized/cpc-small-vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-960/fairseq.txt
+    data/quantized/cpc-small-vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-full-960/quantized_outputs.txt \
+    data/quantized/cpc-small-vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-full-960/fairseq.txt
 python -m scripts.convert_for_fairseq \
     data/quantized/cpc-small-vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/dev-clean/quantized_outputs.txt \
     data/quantized/cpc-small-vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/dev-clean/fairseq.txt
@@ -126,10 +126,10 @@ python -m scripts.convert_for_fairseq \
     data/quantized/cpc-small-vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/test-clean/fairseq.txt
 # Preprocessing
 fairseq.preprocess --only-source \
-    --trainpref data/quantized/cpc-small-vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-960/fairseq.txt \
+    --trainpref data/quantized/cpc-small-vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-full-960/fairseq.txt \
     --validpref data/quantized/cpc-small-vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/dev-clean/fairseq.txt \
     --testpref data/quantized/cpc-small-vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/test-clean/fairseq.txt \
-    --destdir data/fairseq-bin-data/cpc-small-vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-960 \
+    --destdir data/fairseq-bin-data/cpc-small-vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-full-960 \
     --workers 20
 ```
 
@@ -139,9 +139,9 @@ We can finally train the language model. There exist 3 versions of the LM. We'll
 
 ```bash
 fairseq-train --fp16 \
-    data/fairseq-bin-data/cpc-small-vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-960 \
+    data/fairseq-bin-data/cpc-small-vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-full-960 \
     --task language_modeling \
-    --save-dir exps/lm/cpc-small-vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-lstm-librispeech100 \
+    --save-dir exps/lm/cpc-small-vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-lstm-librispeech-full-960 \
     --keep-last-epochs 2 \
     --tensorboard-logdir tensorboard \
     --arch lstm_lm \
@@ -171,8 +171,8 @@ fairseq-train --fp16 \
 SPAN_SIZE = 5 # equivalent to 100 ms
 MAX_TOKENS = 4096
 fairseq-train --fp16 \
-  data/fairseq-bin-data/cpc-small-vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-960 \
-  --save-dir exps/lm/cpc-small-vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-bert_small-librispeech100 \
+  data/fairseq-bin-data/cpc-small-vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-full-960 \
+  --save-dir exps/lm/cpc-small-vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-bert_small-librispeech-full-960\
   --task masked_lm \
   --keep-last-epochs 1 \
   --tensorboard-logdir tensorboard \
@@ -202,8 +202,8 @@ TOTAL_GPU=$((GPU_PER_TASK * TASKS_PER_NODE * NODES))
 DISTRIBUTED_PORT=52663 
 UPDATE_FREQ=$((128 / TOTAL_GPU))
 
-fairseq-train --fp16 data/fairseq-bin-data/cpc-small-vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-960 \
-  --save-dir exps/lm/cpc-small-vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-bert_large-librispeech100 \
+fairseq-train --fp16 data/fairseq-bin-data/cpc-small-vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-full-960 \
+  --save-dir exps/lm/cpc-small-vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-bert_large-librispeech-full-960 \
   --task masked_lm \
   --keep-last-epochs 1 \
   --tensorboard-logdir tensorboard \
