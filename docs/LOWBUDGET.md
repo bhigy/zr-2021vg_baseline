@@ -98,6 +98,7 @@ python -m scripts.quantize_activations exps/kmeans/vg-spokencoco-rnn0_kmeans-lib
 #### Training the model
 
 We can now train the model:
+
 ``` bash
 # Converting quantized output for fairseq
 python -m scripts.convert_for_fairseq \
@@ -121,27 +122,21 @@ fairseq.preprocess --only-source \
 # Training
 fairseq-train --fp16 \
     data/fairseq-bin-data/vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-full-960 \
-    --task language_modeling \
-    --save-dir exps/lm/vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-lstm-librispeech100 \
-    --keep-last-epochs 2 \
+    --save-dir exps/lm/vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-bert-small-librispeech960 \
+    --task masked_lm \
+    --keep-last-epochs 1 \
     --tensorboard-logdir tensorboard \
-    --arch lstm_lm \
-    --decoder-embed-dim 200 \
-    --decoder-hidden-size 1024 \
-    --decoder-layers 3 \
-    --decoder-out-embed-dim 200 \
-    --optimizer adam \
-    --adam-betas '(0.9, 0.98)' \
-    --clip-norm 0.0 \
-    --lr-scheduler inverse_sqrt \
-    --lr 0.0005 \
-    --warmup-updates 1000 \
-    --warmup-init-lr 1e-07 \
-    --dropout 0.1 \
-    --weight-decay 0.01 \
-    --sample-break-mode none \
-    --tokens-per-sample 2048 \
-    --max-tokens 131072 \
-    --update-freq 1 \
-    --max-update 100000
+    --train-subset train \
+    --num-workers 4 \
+    --criterion masked_lm \
+    --arch roberta_base \
+    --sample-break-mode eos --tokens-per-sample 3072 --max-positions 6144 \
+    --optimizer adam --adam-betas '(0.9, 0.98)' --adam-eps 1e-06 --clip-norm 0.0 \
+    --lr-scheduler polynomial_decay --lr 0.0005 --total-num-update 250000 --warmup-updates 10000 \
+    --dropout 0.1 --attention-dropout 0.1 --weight-decay 0.01 \
+    --mask-multiple-length 5 --mask-prob 0.5 --mask-stdev 5 \
+    --max-tokens 4096 --max-update 5000000 --encoder-embed-dim 512 --encoder-ffn-embed-dim 2048 --encoder-attention-heads 8 --encoder-layers 8 \
+    --seed 5 --log-format simple --log-interval 10 --skip-invalid-size-inputs-valid-test
 ```
+
+For examples of alternative language models (LSTM or BERT-big), please see [the instructions](HIGHBUDGET.md) for the high-budget baseline.
