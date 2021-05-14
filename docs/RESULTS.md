@@ -177,4 +177,4 @@ The ABX error rate obtained by CPC small is further improved with the VG model :
 
 The best achievement has been obtained on the semantic similarity task for which our best VG model got 13.09% as compared to 8.72% for the audio-only baseline (results reported here are computed on sSIMI librispeech dev set).
 
-No improvement has been observed on the syntax acceptability judgment task (sBLIMP). A small decrease has been observed on the spot-the-word task : 70.69% for the audio-only basleine as compared to 67.16% for the multimodal baseline.
+No improvement has been observed on the syntax acceptability judgment task (sBLIMP). A small decrease has been observed on the spot-the-word task : 70.69% for the audio-only baseline as compared to 67.16% for the multimodal baseline.
