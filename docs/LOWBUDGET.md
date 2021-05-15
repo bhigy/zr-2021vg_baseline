@@ -81,15 +81,15 @@ python -m scripts.extract_activations exps/vg/vg-spokencoco/net.best.pt \
 #### Quantizing the activations
 
 ``` bash
-python -m scripts.quantize_activations exps/kmeans/vg-spokencoco-rnn0_kmeans-librispeech100-50 \
+python -m scripts.quantize_activations exps/kmeans/vg-spokencoco-rnn0_kmeans-librispeech100-50/checkpoint_last.pt \
     data/activations/vg-spokencoco/librispeech/train-full-960/rnn0 \
     data/quantized/vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-full-960 \
     --recursionLevel 2
-python -m scripts.quantize_activations exps/kmeans/vg-spokencoco-rnn0_kmeans-librispeech100-50 \
+python -m scripts.quantize_activations exps/kmeans/vg-spokencoco-rnn0_kmeans-librispeech100-50/checkpoint_last.pt \
     data/activations/vg-spokencoco/librispeech/dev-clean/rnn0 \
     data/quantized/vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/dev-clean \
     --recursionLevel 2
-python -m scripts.quantize_activations exps/kmeans/vg-spokencoco-rnn0_kmeans-librispeech100-50 \
+python -m scripts.quantize_activations exps/kmeans/vg-spokencoco-rnn0_kmeans-librispeech100-50/checkpoint_last.pt \
     data/activations/vg-spokencoco/librispeech/test-clean/rnn0 \
     data/quantized/vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/test-clean \
     --recursionLevel 2
@@ -112,7 +112,7 @@ python -m scripts.convert_for_fairseq \
     data/quantized/vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/test-clean/fairseq.txt
 
 # Preprocessing of the data
-fairseq.preprocess --only-source \
+fairseq-preprocess --only-source \
     --trainpref data/quantized/vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-full-960/fairseq.txt \
     --validpref data/quantized/vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/dev-clean/fairseq.txt \
     --testpref data/quantized/vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/test-clean/fairseq.txt \

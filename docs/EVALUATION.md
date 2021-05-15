@@ -1,4 +1,4 @@
-In order to evaluate our systems, we need to create a folder following the submission format described on the [challenge's website](https://zerospeech.com/2021/instructions.html). We can then use the [command line tools](https://github.com/bootphon/zerospeech2021) provided with the challenge to validate/evaluate.
+In order to evaluate our systems, we need to create a folder following the submission format described on the [challenge's website](https://zerospeech.com/2021/instructions.html). We can then use the [command line tools](https://github.com/bootphon/zerospeech2021) provided with the challenge to validate/evaluate the submission.
 
 ## Generation of the submission files
 
@@ -27,10 +27,10 @@ python -m scripts.extract_activations exps/vg/vg-spokencoco/net.best.pt \
 
 # Cleaning to match submission format
 cd data/submission/vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-bert-small-librispeech960/phonetic
-mv dev-clean/rnn1/* dev-clean;
-mv dev-other/rnn1/* dev-other;
-mv test-clean/rnn1/* test-clean;
-mv test-other/rnn1/* test-other;
+mv dev-clean/rnn1/* dev-clean
+mv dev-other/rnn1/* dev-other
+mv test-clean/rnn1/* test-clean
+mv test-other/rnn1/* test-other
 rmdir */rnn1; rm */_info_args.json
 cd ../../../..
 ```
@@ -46,18 +46,18 @@ All this can be performed, e.g. for the low-budget baseline, by running:
 python -m scripts.extract_activations exps/vg/vg-spokencoco/net.best.pt \
     ~/corpora/zerospeech2021/lexical/dev \
     data/activations/vg-spokencoco/zerospeech2021/lexical/dev \
-    --batch_size 8 --layer rnn0 --file_extension '.wav'
+    --batch_size 8 --layer rnn0 --output_file_extension '.pt' --file_extension '.wav'
 python -m scripts.extract_activations exps/vg/vg-spokencoco/net.best.pt \
     ~/corpora/zerospeech2021/lexical/test \
     data/activations/vg-spokencoco/zerospeech2021/lexical/test \
-    --batch_size 8 --layer rnn0 --file_extension '.wav'
+    --batch_size 8 --layer rnn0 --output_file_extension '.pt' --file_extension '.wav'
 
 # Quantizing data
-python -m scripts.quantize_activations exps/kmeans/vg-spokencoco-rnn0_kmeans-librispeech100-50 \
+python -m scripts.quantize_activations exps/kmeans/vg-spokencoco-rnn0_kmeans-librispeech100-50/checkpoint_last.pt \
     data/activations/vg-spokencoco/zerospeech2021/lexical/dev/rnn0 \
     data/quantized/vg-spokencoco-rnn0_kmeans-librispeech100-50/zerospeech2021/lexical/dev \
     --recursionLevel 0
-python -m scripts.quantize_activations exps/kmeans/vg-spokencoco-rnn0_kmeans-librispeech100-50 \
+python -m scripts.quantize_activations exps/kmeans/vg-spokencoco-rnn0_kmeans-librispeech100-50/checkpoint_last.pt \
     data/activations/vg-spokencoco/zerospeech2021/lexical/test/rnn0 \
     data/quantized/vg-spokencoco-rnn0_kmeans-librispeech100-50/zerospeech2021/lexical/test \
     --recursionLevel 0
@@ -66,12 +66,12 @@ python -m scripts.quantize_activations exps/kmeans/vg-spokencoco-rnn0_kmeans-lib
 python -m scripts.compute_proba_BERT \
     data/quantized/vg-spokencoco-rnn0_kmeans-librispeech100-50/zerospeech2021/lexical/dev/quantized_outputs.txt \
     data/submission/vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-bert-small-librispeech960/lexical/dev \
-    exps/lm/vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-bert-small-librispeech100 \
+    exps/lm/vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-bert-small-librispeech960/checkpoint_best.pt \
     --dict  data/fairseq-bin-data/vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-full-960/dict.txt
 python -m scripts.compute_proba_BERT \
     data/quantized/vg-spokencoco-rnn0_kmeans-librispeech100-50/zerospeech2021/lexical/test/quantized_outputs.txt \
     data/submission/vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-bert-small-librispeech960/lexical/test \
-    exps/lm/vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-bert-small-librispeech100 \
+    exps/lm/vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-bert-small-librispeech960/checkpoint_best.pt \
     --dict  data/fairseq-bin-data/vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-full-960/dict.txt
 ```
 
@@ -85,18 +85,18 @@ To perform necessary operations for, e.g., the low-budget baseline, run:
 python -m scripts.extract_activations exps/vg/vg-spokencoco/net.best.pt \
     ~/corpora/zerospeech2021/syntactic/dev \
     data/activations/vg-spokencoco/zerospeech2021/syntactic/dev \
-    --batch_size 8 --layer rnn0 --file_extension '.wav'
+    --batch_size 8 --layer rnn0 --output_file_extension '.pt' --file_extension '.wav'
 python -m scripts.extract_activations exps/vg/vg-spokencoco/net.best.pt \
     ~/corpora/zerospeech2021/syntactic/test \
     data/activations/vg-spokencoco/zerospeech2021/syntactic/test \
-    --batch_size 8 --layer rnn0 --file_extension '.wav'
+    --batch_size 8 --layer rnn0 --output_file_extension '.pt' --file_extension '.wav'
 
 # Quantizing data
-python -m scripts.quantize_activations exps/kmeans/vg-spokencoco-rnn0_kmeans-librispeech100-50 \
+python -m scripts.quantize_activations exps/kmeans/vg-spokencoco-rnn0_kmeans-librispeech100-50/checkpoint_last.pt \
     data/activations/vg-spokencoco/zerospeech2021/syntactic/dev/rnn0 \
     data/quantized/vg-spokencoco-rnn0_kmeans-librispeech100-50/zerospeech2021/syntactic/dev \
     --recursionLevel 0
-python -m scripts.quantize_activations exps/kmeans/vg-spokencoco-rnn0_kmeans-librispeech100-50 \
+python -m scripts.quantize_activations exps/kmeans/vg-spokencoco-rnn0_kmeans-librispeech100-50/checkpoint_last.pt \
     data/activations/vg-spokencoco/zerospeech2021/syntactic/test/rnn0 \
     data/quantized/vg-spokencoco-rnn0_kmeans-librispeech100-50/zerospeech2021/syntactic/test \
     --recursionLevel 0
@@ -105,12 +105,12 @@ python -m scripts.quantize_activations exps/kmeans/vg-spokencoco-rnn0_kmeans-lib
 python -m scripts.compute_proba_BERT \
     data/quantized/vg-spokencoco-rnn0_kmeans-librispeech100-50/zerospeech2021/syntactic/dev/quantized_outputs.txt \
     data/submission/vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-bert-small-librispeech960/syntactic/dev \
-    exps/lm/vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-bert-small-librispeech100 \
+    exps/lm/vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-bert-small-librispeech960/checkpoint_best.pt \
     --dict  data/fairseq-bin-data/vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-full-960/dict.txt
 python -m scripts.compute_proba_BERT \
     data/quantized/vg-spokencoco-rnn0_kmeans-librispeech100-50/zerospeech2021/syntactic/test/quantized_outputs.txt \
     data/submission/vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-bert-small-librispeech960/syntactic/test \
-    exps/lm/vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-bert-small-librispeech100 \
+    exps/lm/vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-bert-small-librispeech960/checkpoint_best.pt \
     --dict  data/fairseq-bin-data/vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-full-960/dict.txt
 ```
 
