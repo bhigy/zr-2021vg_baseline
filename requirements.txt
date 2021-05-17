@@ -1,7 +1,7 @@
 Cython==0.29.21
 progressbar2==3.53.1
-torchaudio==0.7.2
-git+https://github.com/tuanh208/CPC_audio.git@09307a1f2fb21cc462acf3f9f298510219424c96
-git+https://github.com/fairseq/fairseq.git@8d66c7c0b2afa612a974714248ab2daa156bce2e
+torchaudio==0.8.1
+git+https://github.com/pytorch/fairseq.git
 git+https://github.com/spokenlanguage/platalea.git@zerospeech21-vg
 git+https://github.com/bootphon/zerospeech2021.git@dac3283ac80a6628bf97a29eea81bfc85443b091
+git+https://github.com/tuanh208/CPC_audio.git@09307a1f2fb21cc462acf3f9f298510219424c96
