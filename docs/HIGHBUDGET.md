@@ -1,6 +1,6 @@
 # Prerequisites
 
-First, we'll need to download the checkpoints of the audio-only baseline as we'll be using pretrained CPC models. 
+First, we'll need to download the checkpoints of the audio-only baseline as we'll be using pretrained CPC models.
 You can do that by running :
 
 ```bash
@@ -18,7 +18,7 @@ At this point, if you have followed the instructions in the [Datasets](./docs/DA
 
 Let's warm up the GPUs then !
 
-## 1) Train the visually grounded model 
+## 1) Train the visually grounded model
 
 First, we must extract CPC representations of SpokenCOCO :
 
@@ -32,19 +32,19 @@ This will create a file `~/corpora/spokencoco/cpc_small.pt` containing the CPC f
 Then, we can train the visually grounded model with :
 
 ```bash
-mkdir -p exps/vg/cpc_small_vg-spokencoco
-cd exps/vg/cpc_small_vg-spokencoco 
+mkdir -p exps/vg/cpc-small_vg-spokencoco
+cd exps/vg/cpc-small_vg-spokencoco
 python -m scripts.train_cpc_vg spokencoco --epochs 12 --spokencoco_root ~/corpora/spokencoco --cpc_feature_size 256 --audio_features_fn cpc_small.pt
 ```
 
 ## 2) Cluster with K-means from the VG representations
 
-Similarly, we first extract CPC+VG representations of librispeech 100h : 
+Similarly, we first extract CPC+VG representations of librispeech 100h :
 
  ```bash
-python -m scripts.extract_activations exps/vg/cpc_small_vg-spokencoco/net.best.pt \
+python -m scripts.extract_activations exps/vg/cpc-small_vg-spokencoco/net.best.pt \
   ~/corpora/librispeech/train-clean-100 \
-  data/activations/cpc_small_vg-spokencoco/librispeech/train-clean-100 \
+  data/activations/cpc-small_vg-spokencoco/librispeech/train-clean-100 \
   --batch_size 8 --layer rnn0 --output_file_extension '.pt' \
   --file_extension '.flac' --recursionLevel 2 --audio_features_fn 'cpc_small.pt' \
   --cpc_model_path ~/zr2021vg_baseline/zr2021_models/checkpoints/CPC-small-kmeans50/cpc_ls100/checkpoint_170.pt
@@ -57,8 +57,8 @@ This script will first extract CPC representations. Then it will feed the latter
 We then train the K-means model :
 
 ```bash
-python -m scripts.clustering data/activations/cpc_small_vg-spokencoco/librispeech/train-clean-100 \
-  exps/kmeans/cpc_small_vg-spokencoco-rnn0_kmeans-librispeech100-50 \
+python -m scripts.clustering data/activations/cpc-small_vg-spokencoco/librispeech/train-clean-100 \
+  exps/kmeans/cpc-small_vg-spokencoco-rnn0_kmeans-librispeech100-50 \
   --nClusters 50 --MAX_ITER 150 --batchSizeGPU 500 --recursionLevel 2 --save
 ```
 
@@ -68,23 +68,23 @@ We must extract CPC+VG representations of `~/corpora/librispeech/{train-full-960
 
 ```bash
 # train-full-960
-python -m scripts.extract_activations exps/vg/cpc_small_vg-spokencoco/net.best.pt \
+python -m scripts.extract_activations exps/vg/cpc-small_vg-spokencoco/net.best.pt \
   ~/corpora/librispeech/train-full-960 \
-  data/activations/cpc_small_vg-spokencoco/librispeech/train-full-960 \
+  data/activations/cpc-small_vg-spokencoco/librispeech/train-full-960 \
   --batch_size 8 --layer rnn0 --output_file_extension '.pt' \
   --file_extension '.flac' --recursionLevel 2 --audio_features_fn 'cpc_small.pt' \
   --cpc_model_path ~/zr2021vg_baseline/zr2021_models/checkpoints/CPC-small-kmeans50/cpc_ls100/checkpoint_170.pt
 # dev-clean
-python -m scripts.extract_activations exps/vg/cpc_small_vg-spokencoco/net.best.pt \
+python -m scripts.extract_activations exps/vg/cpc-small_vg-spokencoco/net.best.pt \
   ~/corpora/librispeech/dev-clean \
-  data/activations/cpc_small_vg-spokencoco/librispeech/dev-clean \
+  data/activations/cpc-small_vg-spokencoco/librispeech/dev-clean \
   --batch_size 8 --layer rnn0 --output_file_extension '.pt' \
   --file_extension '.flac' --recursionLevel 2 --audio_features_fn 'cpc_small.pt' \
   --cpc_model_path ~/zr2021vg_baseline/zr2021_models/checkpoints/CPC-small-kmeans50/cpc_ls100/checkpoint_170.pt
 # test-clean
-python -m scripts.extract_activations exps/vg/cpc_small_vg-spokencoco/net.best.pt \
+python -m scripts.extract_activations exps/vg/cpc-small_vg-spokencoco/net.best.pt \
   ~/corpora/librispeech/test-clean \
-  data/activations/cpc_small_vg-spokencoco/librispeech/test-clean \
+  data/activations/cpc-small_vg-spokencoco/librispeech/test-clean \
   --batch_size 8 --layer rnn0 --output_file_extension '.pt' \
   --file_extension '.flac' --recursionLevel 2 --audio_features_fn 'cpc_small.pt' \
   --cpc_model_path ~/zr2021vg_baseline/zr2021_models/checkpoints/CPC-small-kmeans50/cpc_ls100/checkpoint_170.pt
@@ -94,17 +94,17 @@ Once these representations are extracted, we can quantize them :
 
 ```bash
 # train-full-960
-python -m scripts.quantize_activations exps/kmeans/cpc_small_vg-spokencoco-rnn0_kmeans-librispeech100-50 \
-  data/activations/cpc_small_vg-spokencoco/librispeech/train-full-960/rnn0 \
-  data/quantized/cpc_small_vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-full-960
+python -m scripts.quantize_activations exps/kmeans/cpc-small_vg-spokencoco-rnn0_kmeans-librispeech100-50 \
+  data/activations/cpc-small_vg-spokencoco/librispeech/train-full-960/rnn0 \
+  data/quantized/cpc-small_vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-full-960
 # dev-clean
-python -m scripts.quantize_activations exps/kmeans/cpc_small_vg-spokencoco-rnn0_kmeans-librispeech100-50 \
-  data/activations/cpc_small_vg-spokencoco/librispeech/dev-clean/rnn0 \
-  data/quantized/cpc_small_vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/dev-clean
+python -m scripts.quantize_activations exps/kmeans/cpc-small_vg-spokencoco-rnn0_kmeans-librispeech100-50 \
+  data/activations/cpc-small_vg-spokencoco/librispeech/dev-clean/rnn0 \
+  data/quantized/cpc-small_vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/dev-clean
 # test-clean
-python -m scripts.quantize_activations exps/kmeans/cpc_small_vg-spokencoco-rnn0_kmeans-librispeech100-50 \
-  data/activations/cpc_small_vg-spokencoco/librispeech/test-clean/rnn0 \
-  data/quantized/cpc_small_vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/test-clean
+python -m scripts.quantize_activations exps/kmeans/cpc-small_vg-spokencoco-rnn0_kmeans-librispeech100-50 \
+  data/activations/cpc-small_vg-spokencoco/librispeech/test-clean/rnn0 \
+  data/quantized/cpc-small_vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/test-clean
 ```
 
 The first parameter of `python -m scripts.quantize_activations` is the path to the folder containing the K-means model.\
@@ -116,20 +116,20 @@ Next step is to convert the quantized representations to the format needed by fa
 ```bash
 # Fairseq format conversion
 python -m scripts.convert_for_fairseq \
-    data/quantized/cpc_small_vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-full-960/quantized_outputs.txt \
-    data/quantized/cpc_small_vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-full-960/fairseq.txt
+    data/quantized/cpc-small_vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-full-960/quantized_outputs.txt \
+    data/quantized/cpc-small_vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-full-960/fairseq.txt
 python -m scripts.convert_for_fairseq \
-    data/quantized/cpc_small_vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/dev-clean/quantized_outputs.txt \
-    data/quantized/cpc_small_vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/dev-clean/fairseq.txt
+    data/quantized/cpc-small_vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/dev-clean/quantized_outputs.txt \
+    data/quantized/cpc-small_vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/dev-clean/fairseq.txt
 python -m scripts.convert_for_fairseq \
-    data/quantized/cpc_small_vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/test-clean/quantized_outputs.txt \
-    data/quantized/cpc_small_vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/test-clean/fairseq.txt
+    data/quantized/cpc-small_vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/test-clean/quantized_outputs.txt \
+    data/quantized/cpc-small_vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/test-clean/fairseq.txt
 # Preprocessing
 fairseq.preprocess --only-source \
-    --trainpref data/quantized/cpc_small_vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-full-960/fairseq.txt \
-    --validpref data/quantized/cpc_small_vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/dev-clean/fairseq.txt \
-    --testpref data/quantized/cpc_small_vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/test-clean/fairseq.txt \
-    --destdir data/fairseq-bin-data/cpc_small_vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-full-960 \
+    --trainpref data/quantized/cpc-small_vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-full-960/fairseq.txt \
+    --validpref data/quantized/cpc-small_vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/dev-clean/fairseq.txt \
+    --testpref data/quantized/cpc-small_vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/test-clean/fairseq.txt \
+    --destdir data/fairseq-bin-data/cpc-small_vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-full-960 \
     --workers 20
 ```
 
@@ -139,9 +139,9 @@ We can finally train the language model. There exist 3 versions of the LM. We'll
 
 ```bash
 fairseq-train --fp16 \
-    data/fairseq-bin-data/cpc_small_vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-full-960 \
+    data/fairseq-bin-data/cpc-small_vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-full-960 \
     --task language_modeling \
-    --save-dir exps/lm/cpc_small_vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-lstm-librispeech960 \
+    --save-dir exps/lm/cpc-small_vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-lstm-librispeech960 \
     --keep-last-epochs 2 \
     --tensorboard-logdir tensorboard \
     --arch lstm_lm \
@@ -171,8 +171,8 @@ fairseq-train --fp16 \
 SPAN_SIZE = 5 # equivalent to 100 ms
 MAX_TOKENS = 4096
 fairseq-train --fp16 \
-  data/fairseq-bin-data/cpc_small_vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-full-960 \
-  --save-dir exps/lm/cpc_small_vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-bert-small-librispeech960\
+  data/fairseq-bin-data/cpc-small_vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-full-960 \
+  --save-dir exps/lm/cpc-small_vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-bert-small-librispeech960\
   --task masked_lm \
   --keep-last-epochs 1 \
   --tensorboard-logdir tensorboard \
@@ -199,11 +199,11 @@ CPU_PER_TASK=64
 TASKS_PER_NODE=1
 NODES=4
 TOTAL_GPU=$((GPU_PER_TASK * TASKS_PER_NODE * NODES))
-DISTRIBUTED_PORT=52663 
+DISTRIBUTED_PORT=52663
 UPDATE_FREQ=$((128 / TOTAL_GPU))
 
-fairseq-train --fp16 data/fairseq-bin-data/cpc_small_vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-full-960 \
-  --save-dir exps/lm/cpc_small_vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-bert-large-librispeech960 \
+fairseq-train --fp16 data/fairseq-bin-data/cpc-small_vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-full-960 \
+  --save-dir exps/lm/cpc-small_vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-bert-large-librispeech960 \
   --task masked_lm \
   --keep-last-epochs 1 \
   --tensorboard-logdir tensorboard \

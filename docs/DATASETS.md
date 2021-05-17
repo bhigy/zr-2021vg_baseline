@@ -4,8 +4,8 @@ Several datasets are used to train the baseline :
 
 | Data | Use | Download link |
 ---|---|---
-| COCO images 2014 | VG | https://cocodataset.org/#download |
-| SpokenCOCO | VG | https://groups.csail.mit.edu/sls/downloads/placesaudio/index.cgi|
+| COCO images 2014 | VG model | https://cocodataset.org/#download |
+| SpokenCOCO | VG model | https://groups.csail.mit.edu/sls/downloads/placesaudio/index.cgi|
 | Librispeech | K-means and LM | http://www.openslr.org/12 |
 | ZeroSpeech 2021 | Evaluation | https://download.zerospeech.com |
 
@@ -15,7 +15,7 @@ If you downloaded the train/val/test sets of COCO images 2014 under `~/corpora/s
 You'll have a folder structure that looks like :
 
 ```
-~/corpora/spokencoco 
+~/corpora/spokencoco
 │
 └─── train2014
 └─── val2014
