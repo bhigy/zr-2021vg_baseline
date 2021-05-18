@@ -1,5 +1,13 @@
 In order to evaluate our systems, we need to create a folder following the submission format described on the [challenge's website](https://zerospeech.com/2021/instructions.html). We can then use the [command line tools](https://github.com/bootphon/zerospeech2021) provided with the challenge to validate/evaluate the submission.
 
+If you want to train the CPC+VG version of the baseline, please add the following parameters :
+
+```
+--audio_features cpc_small.pt --cpc_model_path exps/cpc/cpc-small/checkpoint_170.pt 
+```
+
+each time you called `scripts.extract_activations`.
+
 ## Generation of the submission files
 
 ### Phonetic evaluation
@@ -8,9 +16,9 @@ To compute ABX score, we use the activations of the 2nd recurrent layer of the V
 To extract these activations for, e.g., the low-budget baseline, run:
 
 ```
-python -m scripts.extract_activations exps/vg/vg-spokencoco/net.best.pt \
+python -m scripts.extract_activations /net.best.pt \
     ~/corpora/zerospeech2021/phonetic/dev-clean \
-    data/submission/vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-bert-small-librispeech960/phonetic/dev-clean \
+    vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-bert-small-librispeech960/phonetic/dev-clean \
     --batch_size 8 --layer rnn1 --output_file_extension '.txt' --file_extension '.wav'
 python -m scripts.extract_activations exps/vg/vg-spokencoco/net.best.pt \
     ~/corpora/zerospeech2021/phonetic/dev-other \
@@ -67,12 +75,14 @@ python -m scripts.compute_proba_BERT \
     data/quantized/vg-spokencoco-rnn0_kmeans-librispeech100-50/zerospeech2021/lexical/dev/quantized_outputs.txt \
     data/submission/vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-bert-small-librispeech960/lexical/dev.txt \
     exps/lm/vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-bert-small-librispeech960/checkpoint_best.pt \
-    --dict  data/fairseq-bin-data/vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-full-960/dict.txt
+    --dict  data/fairseq-bin-data/vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-full-960/dict.txt \
+    --decoding_span_size 10 --temporal_sliding_size 1
 python -m scripts.compute_proba_BERT \
     data/quantized/vg-spokencoco-rnn0_kmeans-librispeech100-50/zerospeech2021/lexical/test/quantized_outputs.txt \
     data/submission/vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-bert-small-librispeech960/lexical/test.txt \
     exps/lm/vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-bert-small-librispeech960/checkpoint_best.pt \
-    --dict  data/fairseq-bin-data/vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-full-960/dict.txt
+    --dict  data/fairseq-bin-data/vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-full-960/dict.txt \
+    --decoding_span_size 10 --temporal_sliding_size 1
 ```
 
 ### Syntactic evaluation
@@ -106,12 +116,15 @@ python -m scripts.compute_proba_BERT \
     data/quantized/vg-spokencoco-rnn0_kmeans-librispeech100-50/zerospeech2021/syntactic/dev/quantized_outputs.txt \
     data/submission/vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-bert-small-librispeech960/syntactic/dev.txt \
     exps/lm/vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-bert-small-librispeech960/checkpoint_best.pt \
-    --dict  data/fairseq-bin-data/vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-full-960/dict.txt
+    --dict  data/fairseq-bin-data/vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-full-960/dict.txt \
+    --decoding_span_size 10 --temporal_sliding_size 1
+
 python -m scripts.compute_proba_BERT \
     data/quantized/vg-spokencoco-rnn0_kmeans-librispeech100-50/zerospeech2021/syntactic/test/quantized_outputs.txt \
     data/submission/vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-bert-small-librispeech960/syntactic/test.txt \
     exps/lm/vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-bert-small-librispeech960/checkpoint_best.pt \
-    --dict  data/fairseq-bin-data/vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-full-960/dict.txt
+    --dict  data/fairseq-bin-data/vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-full-960/dict.txt \
+    --decoding_span_size 10 --temporal_sliding_size 1
 ```
 
 ### Semantic evaluation
