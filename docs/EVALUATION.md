@@ -65,12 +65,12 @@ python -m scripts.quantize_activations exps/kmeans/vg-spokencoco-rnn0_kmeans-lib
 # Extracting LM pseudo-probabilities
 python -m scripts.compute_proba_BERT \
     data/quantized/vg-spokencoco-rnn0_kmeans-librispeech100-50/zerospeech2021/lexical/dev/quantized_outputs.txt \
-    data/submission/vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-bert-small-librispeech960/lexical/dev \
+    data/submission/vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-bert-small-librispeech960/lexical/dev.txt \
     exps/lm/vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-bert-small-librispeech960/checkpoint_best.pt \
     --dict  data/fairseq-bin-data/vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-full-960/dict.txt
 python -m scripts.compute_proba_BERT \
     data/quantized/vg-spokencoco-rnn0_kmeans-librispeech100-50/zerospeech2021/lexical/test/quantized_outputs.txt \
-    data/submission/vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-bert-small-librispeech960/lexical/test \
+    data/submission/vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-bert-small-librispeech960/lexical/test.txt \
     exps/lm/vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-bert-small-librispeech960/checkpoint_best.pt \
     --dict  data/fairseq-bin-data/vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-full-960/dict.txt
 ```
@@ -104,12 +104,12 @@ python -m scripts.quantize_activations exps/kmeans/vg-spokencoco-rnn0_kmeans-lib
 # Extracting LM pseudo-probabilities
 python -m scripts.compute_proba_BERT \
     data/quantized/vg-spokencoco-rnn0_kmeans-librispeech100-50/zerospeech2021/syntactic/dev/quantized_outputs.txt \
-    data/submission/vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-bert-small-librispeech960/syntactic/dev \
+    data/submission/vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-bert-small-librispeech960/syntactic/dev.txt \
     exps/lm/vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-bert-small-librispeech960/checkpoint_best.pt \
     --dict  data/fairseq-bin-data/vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-full-960/dict.txt
 python -m scripts.compute_proba_BERT \
     data/quantized/vg-spokencoco-rnn0_kmeans-librispeech100-50/zerospeech2021/syntactic/test/quantized_outputs.txt \
-    data/submission/vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-bert-small-librispeech960/syntactic/test \
+    data/submission/vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-bert-small-librispeech960/syntactic/test.txt \
     exps/lm/vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-bert-small-librispeech960/checkpoint_best.pt \
     --dict  data/fairseq-bin-data/vg-spokencoco-rnn0_kmeans-librispeech100-50/librispeech/train-full-960/dict.txt
 ```
@@ -179,6 +179,9 @@ cd ../../..
 The submission folder can be validated and evaluated with following commands:
 
 ```bash
-zerospeech2021-validate data/submission/vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-bert-small-librispeech960
-zerospeech2021-evaluate data/submission/vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-bert-small-librispeech960 results/vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-bert-small-librispeech960
+mkdir results/vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-bert-small-librispeech960
+cd results/vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-bert-small-librispeech960
+zerospeech2021-validate ~/corpora/zerospeech2021 data/submission/vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-bert-small-librispeech960
+zerospeech2021-evaluate ~/corpora/zerospeech2021 data/submission/vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-bert-small-librispeech960
+cd ../..
 ```
