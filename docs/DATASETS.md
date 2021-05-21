@@ -25,6 +25,12 @@ You'll have a folder structure that looks like :
           └─── val
 ```
 
+To train the visually-grounded model, you will need to preprocess the dataset to extract visual and audio features. This can conveniantly be done by running:
+
+```bash
+python -m platalea.utils.preprocessing spokencoco
+```
+
 #### LibriSpeech
 
 If you downloaded LibriSpeech, you're supposed to have a folder structure that looks like this :
