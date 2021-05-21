@@ -3,7 +3,7 @@ In order to evaluate our systems, we need to create a folder following the submi
 If you want to train the CPC+VG version of the baseline, please add the following parameters :
 
 ```
---audio_features cpc_small.pt --cpc_model_path exps/cpc/cpc-small/checkpoint_170.pt 
+--audio_features cpc_small.pt --cpc_model_path exps/cpc/cpc-small/checkpoint_170.pt
 ```
 
 each time you called `scripts.extract_activations`.
@@ -16,7 +16,7 @@ To compute ABX score, we use the activations of the 2nd recurrent layer of the V
 To extract these activations for, e.g., the low-budget baseline, run:
 
 ```
-python -m scripts.extract_activations /net.best.pt \
+python -m scripts.extract_activations exps/vg/vg-spokencoco/net.best.pt \
     ~/corpora/zerospeech2021/phonetic/dev-clean \
     vg-spokencoco-rnn0_kmeans-librispeech100-50_lm-bert-small-librispeech960/phonetic/dev-clean \
     --batch_size 8 --layer rnn1 --output_file_extension '.txt' --file_extension '.wav'
