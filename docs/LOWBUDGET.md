@@ -14,6 +14,15 @@ If alternatively you want to retrain the baseline from scratch, you will need to
 
 ### Training the VG model.
 
+To train the visually-grounded model, you will first need to preprocess the dataset to extract visual and audio features.
+This can conveniantly be done by running:
+
+```bash
+python -m platalea.utils.preprocessing spokencoco --spokencoco_root ~/corpora/spokencoco
+```
+
+The model can then be trained with:
+
 ```bash
 mkdir -p exps/vg/vg-spokencoco
 cd exps/vg/vg-spokencoco
