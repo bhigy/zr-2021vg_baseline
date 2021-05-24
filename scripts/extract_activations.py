@@ -12,7 +12,7 @@ from cpc.dataset import findAllSeqs, filterSeqs
 import platalea.dataset as dataset
 from platalea.utils.preprocessing import audio_features
 
-from scripts.utils.utils_functions import writeArgs
+from utils.utils_functions import writeArgs
 
 
 def parseArgs(argv):
@@ -146,7 +146,7 @@ def main(pathCheckpoint, pathDB, pathOutputDir, batch_size=8, debug=False,
     print(f"Loading audio features for {pathDB}")
     pathDB = Path(pathDB)
     if seqList is None:
-        cache_fpath = pathDB / '_mfcc_features.pt'
+        cache_fpath = pathDB / args.audio_features_fn
         if cache_fpath.exists():
             print(f"Found cached features ({cache_fpath}). Loading them.")
             features = torch.load(cache_fpath)
@@ -160,6 +160,7 @@ def main(pathCheckpoint, pathDB, pathOutputDir, batch_size=8, debug=False,
         print('Computing features.')
         audio_fpaths = [pathDB / s[1] for s in seqNames]
         features = compute_audio_features(audio_fpaths, max_size_seq, _audio_feat_config)
+
 
     # Load VG model
     print("")
@@ -175,10 +176,11 @@ def main(pathCheckpoint, pathDB, pathOutputDir, batch_size=8, debug=False,
                                        shuffle=False,
                                        num_workers=0,
                                        collate_fn=lambda x: dataset.batch_audio(x, max_frames=None))
+
     i_next = 0
     zr_keywords = ['phonetic', 'lexical', 'syntactic', 'semantic']
     if zr_format:
-        splitted_path = pathDB.split('/')
+        splitted_path = str(pathDB).split('/')
         for keyword in zr_keywords:
             if keyword in splitted_path:
                 keyword_idx = splitted_path.index(keyword)
