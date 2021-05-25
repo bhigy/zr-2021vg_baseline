@@ -26,7 +26,7 @@ The model can then be trained with:
 ```bash
 mkdir -p exps/vg/vg-spokencoco
 cd exps/vg/vg-spokencoco
-python -m scripts.train_vg spokencoco --epochs 12 --spokencoco_root ~/corpora/spokencoco
+python -m scripts.train_vg spokencoco --epochs 12 --spokencoco_root ~/corpora/spokencoco --image_features_fn resnet_features.memmap --audio_features_fn mfcc_features.memmap
 python -m platalea.utils.copy_best
 cd ../../..
 ```
