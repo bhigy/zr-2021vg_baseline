@@ -173,6 +173,55 @@ Higher is better.
 **K** refers to the number of clusters used in K-means.
 **M_d** and **Delta_t** are respectively the decoding span size and the temporal sliding size used to extract pseudo-probabilities
 
+# Test metrics
+
+<table>
+<tr>
+    <td style="font-weight:bold"></td>
+    <td colspan="2" align="center" style="font-weight:bold">ABX test-clean</td>
+    <td colspan="2" align="center" style="font-weight:bold">ABX test-clean</td>
+    <td colspan="2" align="center" style="font-weight:bold">sSIMI</td>
+    <td colspan="1" align="center" style="font-weight:bold"></td>
+    <td colspan="1" align="center" style="font-weight:bold"></td>
+  </tr>
+  <tr>
+    <td style="font-weight:bold">Model</td>
+    <td colspan="1" align="center" style="font-weight:bold">within</td>
+    <td colspan="1" align="center" style="font-weight:bold">across</td>
+    <td colspan="1" align="center" style="font-weight:bold">within</td>
+    <td colspan="1" align="center" style="font-weight:bold">across</td>
+    <td colspan="1" align="center" style="font-weight:bold">librispeech</td>
+    <td colspan="1" align="center" style="font-weight:bold">synthetic</td>
+    <td colspan="1" align="center" style="font-weight:bold">sWUGGY</td>
+    <td colspan="1" align="center" style="font-weight:bold">sBLIMP</td>
+  </tr>
+
+
+  <tr>
+    <td>MFCCs+VG+<br>KMEANS+<br>BERT small</td>
+    <td>8.39</td>
+    <td>10.59</td>
+    <td>10.66</td>
+    <td>15.03</td>
+    <td>-0.10</td>
+    <td>9.99</td>
+    <td>52.86</td>
+    <td>53.02</td>
+  </tr>
+
+  <tr>
+    <td>CPC small+VG+<br>KMEANS+<br>BERT large</td>
+    <td>5.36</td>
+    <td>6.71</td>
+    <td>7.35</td>
+    <td>11.92</td>
+    <td>0.16</td>
+    <td>9.71</td>
+    <td>67.20</td>
+    <td>54.53</td>
+  </tr>
+</table>
+
 
 # Findings
 
