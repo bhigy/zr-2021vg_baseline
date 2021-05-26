@@ -1,9 +1,9 @@
 In order to evaluate our systems, we need to create a folder following the submission format described on the [challenge's website](https://zerospeech.com/2021/instructions.html). We can then use the [command line tools](https://github.com/bootphon/zerospeech2021) provided with the challenge to validate/evaluate the submission.
 
-If you want to train the CPC+VG version of the baseline, please add the following parameters :
+If you want to evaluate the CPC+VG version of the baseline, please add the following parameters :
 
 ```
---audio_features cpc_small.pt --cpc_model_path exps/cpc/cpc-small/checkpoint_170.pt
+--audio_features cpc_small.pt --cpc_model_path ZRMM_baseline_checkpoints/cpc/cpc-small/checkpoint_170.pt
 ```
 
 each time you called `scripts.extract_activations`.
