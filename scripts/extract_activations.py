@@ -12,7 +12,7 @@ from cpc.dataset import findAllSeqs, filterSeqs
 import platalea.dataset as dataset
 from platalea.utils.preprocessing import audio_features
 
-from utils.utils_functions import writeArgs
+from scripts.utils.utils_functions import writeArgs
 
 
 def parseArgs(argv):
