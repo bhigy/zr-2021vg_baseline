@@ -4,8 +4,7 @@ Please refer to the [Zero Resource Speech paper](https://arxiv.org/pdf/2011.1158
 Checkpoints of the baseline can be obtained by running :
 
 ```bash
-curl -L -o exps.zip https://www.dropbox.com/sh/xcdtml8a3go3fk8/AAAfymU80lS6ZKMr3y9okwApa?dl=0
-unzip exps.zip -d exps
+curl https://download.zerospeech.com/2021/baseline_checkpoints_VG.zip | jar xv
 ```
 
 
