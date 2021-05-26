@@ -4,17 +4,16 @@ First, we'll need to download the checkpoints of the audio-only baseline as we'l
 You can do that by running :
 
 ```bash
-curl -L -o exps.zip https://www.dropbox.com/sh/xcdtml8a3go3fk8/AAAfymU80lS6ZKMr3y9okwApa?dl=0
-unzip exps.zip -d exps
+curl https://download.zerospeech.com/2021/baseline_checkpoints_VG.zip | jar xv
 ```
 
-We'll assume that these checkpoints are stored under `~/zr2021vg_baseline/zr2021_models`.
+We'll assume that these checkpoints are stored under `~/zr2021vg_baseline`.
 At this point, if you have followed the instructions in the [Datasets](./docs/DATASETS.md) instructions, you should have all the required datasets and models under :
 
 * `~/corpora/spokencoco`
 * `~/corpora/librispeech`
 * `~/corpora/zerospeech2021`
-* `~/zr2021vg_baseline/zr2021_models`
+* `~/zr2021vg_baseline/ZRMM_baseline_checkpoints`
 
 Let's warm up the GPUs then !
 
@@ -25,7 +24,7 @@ First, we must extract CPC representations of SpokenCOCO :
 ```bash
 python -m platalea.utils.preprocessing spokencoco --spokencoco_root ~/corpora/spokencoco \
   --cpc_feature_size 256 --audio_features_fn cpc_small.pt \
-  --cpc_model_path ~/zr2021vg_baseline/zr2021_models/checkpoints/CPC-small-kmeans50/cpc_ls100/checkpoint_170.pt
+  --cpc_model_path ~/zr2021vg_baseline/ZRMM_baseline_checkpoints/checkpoints/CPC-small-kmeans50/cpc_ls100/checkpoint_170.pt
 ```
 
 This will create a file `~/corpora/spokencoco/cpc_small.pt` containing the CPC features of the audio files, as well as another file `~/corpora/spokencoco/resnet_features.pt` containing the visual features.
@@ -47,7 +46,7 @@ python -m scripts.extract_activations exps/vg/cpc-small_vg-spokencoco/net.best.p
   data/activations/cpc-small_vg-spokencoco/librispeech/train-clean-100 \
   --batch_size 8 --layer rnn0 --output_file_extension '.pt' \
   --file_extension '.flac' --recursionLevel 2 --audio_features_fn 'cpc_small.pt' \
-  --cpc_model_path ~/zr2021vg_baseline/zr2021_models/checkpoints/CPC-small-kmeans50/cpc_ls100/checkpoint_170.pt
+  --cpc_model_path ~/zr2021vg_baseline/ZRMM_baseline_checkpoints/checkpoints/CPC-small-kmeans50/cpc_ls100/checkpoint_170.pt
 ```
 
 The first parameter is the path to the VG model whose representations need to be extracted.\
@@ -73,21 +72,21 @@ python -m scripts.extract_activations exps/vg/cpc-small_vg-spokencoco/net.best.p
   data/activations/cpc-small_vg-spokencoco/librispeech/train-full-960 \
   --batch_size 8 --layer rnn0 --output_file_extension '.pt' \
   --file_extension '.flac' --recursionLevel 2 --audio_features_fn 'cpc_small.pt' \
-  --cpc_model_path ~/zr2021vg_baseline/zr2021_models/checkpoints/CPC-small-kmeans50/cpc_ls100/checkpoint_170.pt
+  --cpc_model_path ~/zr2021vg_baseline/ZRMM_baseline_checkpoints/checkpoints/CPC-small-kmeans50/cpc_ls100/checkpoint_170.pt
 # dev-clean
 python -m scripts.extract_activations exps/vg/cpc-small_vg-spokencoco/net.best.pt \
   ~/corpora/librispeech/dev-clean \
   data/activations/cpc-small_vg-spokencoco/librispeech/dev-clean \
   --batch_size 8 --layer rnn0 --output_file_extension '.pt' \
   --file_extension '.flac' --recursionLevel 2 --audio_features_fn 'cpc_small.pt' \
-  --cpc_model_path ~/zr2021vg_baseline/zr2021_models/checkpoints/CPC-small-kmeans50/cpc_ls100/checkpoint_170.pt
+  --cpc_model_path ~/zr2021vg_baseline/ZRMM_baseline_checkpoints/checkpoints/CPC-small-kmeans50/cpc_ls100/checkpoint_170.pt
 # test-clean
 python -m scripts.extract_activations exps/vg/cpc-small_vg-spokencoco/net.best.pt \
   ~/corpora/librispeech/test-clean \
   data/activations/cpc-small_vg-spokencoco/librispeech/test-clean \
   --batch_size 8 --layer rnn0 --output_file_extension '.pt' \
   --file_extension '.flac' --recursionLevel 2 --audio_features_fn 'cpc_small.pt' \
-  --cpc_model_path ~/zr2021vg_baseline/zr2021_models/checkpoints/CPC-small-kmeans50/cpc_ls100/checkpoint_170.pt
+  --cpc_model_path ~/zr2021vg_baseline/ZRMM_baseline_checkpoints/checkpoints/CPC-small-kmeans50/cpc_ls100/checkpoint_170.pt
 ```
 
 Once these representations are extracted, we can quantize them :
