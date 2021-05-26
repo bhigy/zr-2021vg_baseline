@@ -228,6 +228,6 @@ Overall, using the visual modality for learning speech representations in an uns
 
 * The ABX error rate obtained by CPC small is further improved with the VG model (high-budget baseline): it goes from 6.24% ABX error rate to 5.36% ABX error rate (librispeech dev-clean, within speakers).
 
-* The best achievement is obtained on the semantic similarity task for which our best VG model gets a score of 13.09 compared to 8.72 for the audio-only baseline (results reported here are computed on sSIMI librispeech dev set).
+* The best achievement is obtained on the semantic similarity task for which our best VG model gets a score of 13.09 compared to 8.72 for the audio-only baseline (results reported here are computed on sSIMI librispeech dev set). However, we observe a decrease on the test set for the sSIMI metric which is probably due to the fact that the dev and test sets for this metrics haven't been drawn from the same distribution, and that the test metric is averaged across multiple datasets.
 
 * No improvement is observed on the syntax acceptability judgment task (sBLIMP). A small decrease is observed on the spot-the-word task : 70.69% for the audio-only baseline compared to 67.16% for the multimodal baseline.
