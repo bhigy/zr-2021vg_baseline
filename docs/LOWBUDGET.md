@@ -6,7 +6,7 @@ Similarly to the baselines for the [ZeroSpeech 2021 challenge - audio-only track
 
 ## Pretrained models
 
-Pretrained models can be downloaded from [the ZeroSpeech challenge website](https://download.zerospeech.com). Simply unzip the archive under the repository root directory.
+Pretrained models can be downloaded from [the ZeroSpeech challenge website](https://download.zerospeech.com). Simply unzip the archive and copy the `exps` folder under the repository root directory.
 
 ## Training procedure
 
